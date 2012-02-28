@@ -33,7 +33,7 @@ One shortcode tag can request several functions.
 = Examples =
 
 * List of pages, insert [fct wp_list_pages="title_li="]
-* List of children pages of current page, insert [fct wp_list_pages="title_li&child_of=%postID%&depth=1"]
+* List of children pages of current page, insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
 
 == Installation ==
 
