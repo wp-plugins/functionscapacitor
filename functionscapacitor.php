@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name:	functionsCapacitor
-Plugin URI: 
-Description:	Back Wordpress Codex functions into the content. This plugin allow to apply some Wordpress API's functions into your post/page content.
+Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
+Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content.
 Author:			oliezekat
-Version:		0.1
+Version:		0.2
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -17,7 +17,8 @@ class functionsCapacitor
 									'wp_get_archives',
 									'wp_list_bookmarks',
 									'wp_list_categories',
-									'wp_list_pages'
+									'wp_list_pages',
+									'wp_nav_menu'
 									);
 	
 	/* Constructor */
@@ -54,7 +55,7 @@ class functionsCapacitor
 				{
 				foreach ($custom_values as $custom_value)
 					{
-					$custom_fields_content .= $this->function_content($custom_key,$custom_value);
+					$custom_fields_content .= $this->function_content($custom_key,$custom_value,'content');
 					}
 				}
 			}
@@ -80,12 +81,13 @@ class functionsCapacitor
 			else
 				{
 				$fct_name = $att_key;
+				$att_value = str_replace('&#038;','&',$att_value);
 				$fct_args = $att_value;
 				}
 				
 			if (in_array($fct_name,$this->supported_functions))
 				{
-				$shortcode_content .= $this->function_content($fct_name,$fct_args);
+				$shortcode_content .= $this->function_content($fct_name,$fct_args,'content');
 				}
 			}
 			
@@ -109,14 +111,35 @@ class functionsCapacitor
 		return $content;
 		}
 		
-	function function_content($fct_name,$fct_args)
+	function explode_function_arguments_string($arguments_string)
 		{
-		global $post;
+		$arguments_array = array();
+		$pairs = explode("&", $arguments_string);
+		foreach ($pairs as $pair)
+			{
+			$pair_array = explode('=', $pair,2);
+			$k = $pair_array[0];
+			$arguments_array[$k] = '';
+			if ($pair_array[1]) $arguments_array[$k] = $pair_array[1];
+			}
+		return $arguments_array;
+		}
 		
+	function implode_function_arguments($arguments_array)
+		{
+		$ret = array();
+        foreach ($arguments_array as $k => $v)
+			{
+            array_push($ret, $k.'='.$v);
+			}
+        return implode('&', $ret); 
+		}
+		
+	function function_content($fct_name,$fct_args,$target='content')
+		{
 		// Magic keywords replacement
 		$fct_args = $this->magic_keywords_replace($fct_args);
-		$arguments = array();
-		parse_str($fct_args, $arguments);
+		$arguments = $this->explode_function_arguments_string($fct_args);
 		
 		$function_content = '';
 		switch($fct_name)
@@ -124,31 +147,37 @@ class functionsCapacitor
 			case 'wp_get_archives':
 				$arguments['echo'] = '0'; // Never echo()
 				$arguments['format'] = 'html'; // Only HTML output
-				$fct_args = http_build_query($arguments,'','&');
-				$function_content = wp_get_archives($fct_args);
+				$fct_args = $this->implode_function_arguments($arguments);
+				$function_content .= wp_get_archives($fct_args);
 				$function_content = '<ul class="wp_get_archives">'.$function_content.'</ul>';
 				break;
 				
 			case 'wp_list_bookmarks':
 				$arguments['echo'] = '0'; // Never echo()
-				$fct_args = http_build_query($arguments,'','&');
-				$function_content = wp_list_bookmarks($fct_args);
+				$fct_args = $this->implode_function_arguments($arguments);
+				$function_content .= wp_list_bookmarks($fct_args);
 				$function_content = '<ul class="wp_list_bookmarks">'.$function_content.'</ul>';
 				break;
 			
 			case 'wp_list_categories':
 				$arguments['echo'] = '0'; // Never echo()
-				$fct_args = http_build_query($arguments,'','&');
-				$function_content = wp_list_categories($fct_args);
+				$fct_args = $this->implode_function_arguments($arguments);
+				$function_content .= wp_list_categories($fct_args);
 				$function_content = '<ul class="wp_list_categories">'.$function_content.'</ul>';
 				break;
 				
 			case 'wp_list_pages':
 				$arguments['echo'] = '0'; // Never echo()
-				$fct_args = http_build_query($arguments,'','&');
-				$function_content = wp_list_pages($fct_args);
+				$fct_args = $this->implode_function_arguments($arguments);
+				$function_content .= wp_list_pages($fct_args);
 				$function_content = '<ul class="wp_list_pages">'.$function_content.'</ul>';
 				break;
+				
+			case 'wp_nav_menu':
+				$arguments['echo'] = false; // Never echo()
+				$function_content .= wp_nav_menu($arguments);
+				break;
+				
 			}
 		return $function_content;
 		}
