@@ -11,10 +11,16 @@ This plugin allow to apply some WordPress API's functions into your post/page co
 
 > Back WordPress API to the content.
 
-You could request some (supported*) functions of WordPress API with same syntax for arguments.
- Result will inserted into your post/page content as HTML output.
+You can request some (supported*) functions of WordPress API with same syntax for arguments into your post or page content.
+ functionsCapacitor will insert function result into your content as HTML output.
 
 (*) see "Other Notes" for full list.
+
+= Method by shortcode tag =
+
+Insert a tag into your content like [fct function_name="parameter=value&parameter=value"].
+
+One shortcode tag can request several functions, input [fct function_name1="arguments" function_name2="arguments"].
 
 = Method by custom fields =
 
@@ -24,14 +30,9 @@ Result is always inserted at end. Plugin has priority 5.
 Most plugins use priority 10.
 This method is applied if post/page were displayed.
 	
-= Method by shortcode tag =
-
-Insert a tag into your content as [fct function_name="function arguments"].
-
-One shortcode tag can request several functions.
-
 = Examples =
 
+* List of popular posts tags, insert [fct wp_tag_cloud]
 * List of pages, insert [fct wp_list_pages="title_li="]
 * List of children pages of current page, insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
 
@@ -62,6 +63,7 @@ Use these keywords to obtain variables values into your functions arguments.
 * wp_list_categories() with echo=0 as default
 * wp_list_pages() with echo=0 as default
 * wp_nav_menu() with echo=false as default
+* wp_tag_cloud() with echo=0 as default, format=flat|list only
 
 See [WordPress Codex](http://codex.wordpress.org/ "Wordpress documentation") about these functions and their arguments syntax.
 
@@ -88,6 +90,10 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.3 =
+
+* support wp_tag_cloud() function.
 
 = 0.2 =
 

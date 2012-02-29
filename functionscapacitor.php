@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content.
 Author:			oliezekat
-Version:		0.2
+Version:		0.3
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -18,7 +18,8 @@ class functionsCapacitor
 									'wp_list_bookmarks',
 									'wp_list_categories',
 									'wp_list_pages',
-									'wp_nav_menu'
+									'wp_nav_menu',
+									'wp_tag_cloud'
 									);
 	
 	/* Constructor */
@@ -148,34 +149,48 @@ class functionsCapacitor
 				$arguments['echo'] = '0'; // Never echo()
 				$arguments['format'] = 'html'; // Only HTML output
 				$fct_args = $this->implode_function_arguments($arguments);
-				$function_content .= wp_get_archives($fct_args);
+				$function_content = wp_get_archives($fct_args);
 				$function_content = '<ul class="wp_get_archives">'.$function_content.'</ul>';
 				break;
 				
 			case 'wp_list_bookmarks':
 				$arguments['echo'] = '0'; // Never echo()
 				$fct_args = $this->implode_function_arguments($arguments);
-				$function_content .= wp_list_bookmarks($fct_args);
+				$function_content = wp_list_bookmarks($fct_args);
 				$function_content = '<ul class="wp_list_bookmarks">'.$function_content.'</ul>';
 				break;
 			
 			case 'wp_list_categories':
 				$arguments['echo'] = '0'; // Never echo()
 				$fct_args = $this->implode_function_arguments($arguments);
-				$function_content .= wp_list_categories($fct_args);
+				$function_content = wp_list_categories($fct_args);
 				$function_content = '<ul class="wp_list_categories">'.$function_content.'</ul>';
 				break;
 				
 			case 'wp_list_pages':
 				$arguments['echo'] = '0'; // Never echo()
 				$fct_args = $this->implode_function_arguments($arguments);
-				$function_content .= wp_list_pages($fct_args);
+				$function_content = wp_list_pages($fct_args);
 				$function_content = '<ul class="wp_list_pages">'.$function_content.'</ul>';
 				break;
 				
 			case 'wp_nav_menu':
 				$arguments['echo'] = false; // Never echo()
-				$function_content .= wp_nav_menu($arguments);
+				$function_content = wp_nav_menu($arguments);
+				break;
+				
+			case 'wp_tag_cloud':
+				$arguments['echo'] = '0'; // Never echo()
+				if ($arguments['format'] != 'list')
+					{
+					$arguments['format'] = 'flat'; // Allow only flat or list
+					}
+				$fct_args = $this->implode_function_arguments($arguments);
+				$function_content = wp_tag_cloud($fct_args);
+				if ($arguments['format'] == 'flat')
+					{
+					$function_content = '<div class="wp_tag_cloud">'.$function_content.'</div>';
+					}
 				break;
 				
 			}
