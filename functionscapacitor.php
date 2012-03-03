@@ -281,6 +281,7 @@ class functionsCapacitor
 		$result_content = '';
 		$excerpt_length = apply_filters('excerpt_length',55);
 		$excerpt_more = '[...]';
+		$strip_shortcodes_exists = function_exists('strip_shortcodes');
 		
 		$recent_posts = wp_get_recent_posts($arguments);
 		foreach($recent_posts as $recent)
@@ -288,7 +289,7 @@ class functionsCapacitor
 			$result_content .= '<li>';
 			$result_content .= '<a class="title" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
 			$result_content .= ''.$recent["post_title"].'';
-			$result_content .= '</a>';
+			$result_content .= '</a> ';
 			
 			if ($arguments['fct:show_excerpt'])
 				{
@@ -296,7 +297,7 @@ class functionsCapacitor
 				if ($post_excerpt == '')
 					{
 					$post_excerpt = $recent["post_content"];
-					$post_excerpt = apply_filters('the_content', $post_excerpt);
+					if ($strip_shortcodes_exists == TRUE) $post_excerpt = strip_shortcodes($post_excerpt);
 					if (($more_pos = strpos($post_excerpt,'<!--more-->')) AND ($more_pos !== FALSE))
 						{
 						$post_excerpt = substr($post_excerpt,0,$more_pos);
@@ -314,7 +315,7 @@ class functionsCapacitor
 							}
 						}
 					}
-				$result_content .= '<p class="excerpt">'.$post_excerpt.'</p>';
+				$result_content .= '<p class="excerpt">'.$post_excerpt.'</p> ';
 				}
 			
 			//$result_content .= ''.print_r($recent,true);
