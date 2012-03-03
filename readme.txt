@@ -18,7 +18,7 @@ You can request some (supported*) functions of WordPress API with same syntax fo
 
 = Method by shortcode tag =
 
-Insert a tag into your content like [fct function_name="parameter=value&parameter=value"].
+Insert a tag into your content like [fct function_name="parameter1=value&parameter2=value"].
 
 One shortcode tag can request several functions, input [fct function_name1="arguments" function_name2="arguments"].
 
@@ -32,7 +32,7 @@ This method is applied if post/page were displayed.
 	
 = Examples =
 
-* List of popular posts tags, insert [fct wp_tag_cloud]
+* Tag cloud of popular posts tags, insert [fct wp_tag_cloud]
 * List of pages, insert [fct wp_list_pages="title_li="]
 * List of children pages of current page, insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
 
@@ -47,27 +47,79 @@ This method is applied if post/page were displayed.
 
 Any functionsCapacitor request will insert `<div class="functionsCapacitor">functions output</div>`.
 
-Some functions output were inserted as `<ul class="function_name">function output</ul>`
+Some functions output (which not return a HTML container) were inserted like
+ `<ul class="function_name">function output</ul>`
  or `<div class="function_name">function output</div>`.
+ See "fct:container_class" special parameter.
+ 
+= Functions arguments syntax =
+
+Follow these examples to setup your requests :
+
+* "parameter1=something&parameter2=25", parameter1 and parameter2 typed as strings.
+* "parameter1=something&parameter2=false", parameter2 typed as boolean.
+* "parameter1=&parameter2=something", parameter1 equal empty string.
+* "parameter1=something&parameter2=array('something','something')", parameter2 typed as an array of 2 strings.
+* "parameter1=something&parameter2=array(10,5,20)", parameter2 typed as an array of 3 integers.
+* "parameter1=something&parameter2=array(true,false)", parameter2 typed as an array of 2 booleans.
 
 = Magic keywords =
 
 Use these keywords to obtain variables values into your functions arguments.
 
-* %postID% => $post->ID
+* %postID% => $post->ID of current post or page.
 
-= Supported functions =
+= Special functions parameters =
 
-* wp_get_archives() with echo=0&format=html as default
-* wp_list_bookmarks() with echo=0 as default
-* wp_list_categories() with echo=0 as default
-* wp_list_pages() with echo=0 as default
-* wp_nav_menu() with echo=false as default
-* wp_tag_cloud() with echo=0 as default, format=flat|list only
+* fct:container_class to set container "class" attribute.
+ Function name as default.
+ Not applied if the function still return a container (see Codex to personalize them).
+
+== Supported functions ==
+
+* wp_get_archives()
+ with echo=0&format=html as default
+* wp_get_recent_posts()
+ rendered as UL list,
+ fct:show_excerpt=1|true to display posts excerpts
+* wp_list_bookmarks()
+ with echo=0 as default
+* wp_list_categories()
+ with echo=0 as default
+* wp_list_pages()
+ with echo=0 as default
+* wp_nav_menu()
+ with echo=false as default
+* wp_tag_cloud()
+ with echo=0 as default,
+ format=flat|list only
 
 See [WordPress Codex](http://codex.wordpress.org/ "Wordpress documentation") about these functions and their arguments syntax.
 
 Need you to support more functions, mail to oliezekat@yahoo.fr
+
+== Changelog ==
+
+= 0.4 =
+
+* support wp_get_recent_posts() as UL list rendering.
+* support parameter value as an array of strings, integers, or booleans
+ like "parameter=array('string',integer,true,false,...)".
+* check an API function exists.
+* add special parameter "fct:container_class=class(es) name(s)".
+
+= 0.3 =
+
+* support wp_tag_cloud() function.
+
+= 0.2 =
+
+* support wp_nav_menu() function.
+* fix function arguments processing from shortcode tag.
+
+= 0.1 =
+
+* Experimental release which support wp_get_archives(), wp_list_bookmarks(), wp_list_categories(), and wp_list_pages().
 
 == Frequently Asked Questions ==
 
@@ -88,19 +140,4 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 > ma souris a glissé, le bouton-droit a heurté le pot de fleurs,
 > et en voyant le résultat à l'écran j'ai eu une révélation ! Une vision !
 > Le convecteur de fonctions !
-
-== Changelog ==
-
-= 0.3 =
-
-* support wp_tag_cloud() function.
-
-= 0.2 =
-
-* support wp_nav_menu() function.
-* fix function arguments processing from shortcode tag.
-
-= 0.1 =
-
-* Experimental release which support wp_get_archives(), wp_list_bookmarks(), wp_list_categories(), and wp_list_pages().
 
