@@ -1,11 +1,11 @@
 === functionsCapacitor ===
 Contributors: oliezekat
-Tags: content, post, page, api, pages, posts
+Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories
 Requires at least: 2.5.0
 Tested up to: 3.3.1
 Stable tag: trunk
 
-This plugin allow to apply some WordPress API's functions into your post/page content.
+This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 
 == Description ==
 
@@ -22,9 +22,13 @@ Insert a tag into your content like [fct function_name="parameter1=value&paramet
 
 One shortcode tag can request several functions, input [fct function_name1="arguments" function_name2="arguments"].
 
+= Method with a widget =
+
+Add a functionsCapacitor widget, select a function, input functions parameters like "parameter1=value&parameter2=value" (without quotes).
+
 = Method by custom fields =
 
-Set a custom field name with function name and put function arguments into custom field value.
+Set a custom field name with function name and put function arguments into custom field value like "parameter1=value&parameter2=value" (without quotes).
 
 Result is always inserted at end. Plugin has priority 5.
 Most plugins use priority 10.
@@ -32,9 +36,15 @@ This method is applied if post/page were displayed.
 	
 = Examples =
 
-* Tag cloud of popular posts tags, insert [fct wp_tag_cloud]
-* List of pages, insert [fct wp_list_pages="title_li="]
-* List of children pages of current page, insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
+* Tag cloud of popular posts tags,
+ insert [fct wp_tag_cloud]
+* List of pages,
+ insert [fct wp_list_pages="title_li="]
+* List of children pages of current page,
+ insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
+* List of category's recent posts with excerpts,
+ insert [fct wp_get_recent_posts="category=X&fct:show_excerpt=1"]
+ with X equal category ID number
 
 == Installation ==
 
@@ -63,11 +73,22 @@ Follow these examples to setup your requests :
 * "parameter1=something&parameter2=array(10,5,20)", parameter2 typed as an array of 3 integers.
 * "parameter1=something&parameter2=array(true,false)", parameter2 typed as an array of 2 booleans.
 
+Not supported issues :
+
+* parameter's value can't contain a & character.
+* parameter's value can't contain an associative array like array('name'=>value,'name'=>value).
+* parameter's value can't contain an array of arrays.
+* parameter's value can't contain a PHP variable like $post->ID, see "Magic keywords" bellow.
+* parameter's value can't request a PHP or WordPress function.
+* parameter's value can't contain PHP code.
+
 = Magic keywords =
 
-Use these keywords to obtain variables values into your functions arguments.
+Use these keywords to obtain variables values into your functions arguments :
 
-* %postID% => $post->ID of current post or page.
+* %postID% => $post->ID of post or page where made the request :
+ related post/page into a shortcode,
+ or current post/page into a widget.
 
 = Special functions parameters =
 
@@ -81,6 +102,7 @@ Use these keywords to obtain variables values into your functions arguments.
  with echo=0&format=html as default
 * wp_get_recent_posts()
  rendered as UL list,
+ with exclude=%postID% as default,
  fct:show_excerpt=1|true to display posts excerpts
 * wp_list_bookmarks()
  with echo=0 as default
@@ -99,6 +121,11 @@ See [WordPress Codex](http://codex.wordpress.org/ "Wordpress documentation") abo
 Need you to support more functions, mail to oliezekat@yahoo.fr
 
 == Changelog ==
+
+= 0.5 =
+
+* purpose to use API's functions as a widget.
+* set "exclude=%postID%" as default for wp_get_recent_posts().
 
 = 0.4 =
 

@@ -2,14 +2,12 @@
 /*
 Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
-Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content.
+Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.4
+Version:		0.5
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
-
-add_action('plugins_loaded', array('functionsCapacitor', 'plugins_loaded_action'));
 
 class functionsCapacitor
 	{
@@ -29,44 +27,47 @@ class functionsCapacitor
 	
 	function functionsCapacitor()
 		{
+		}
+		
+	/* Callback functions for hooks, filters, widgets, etc */
+	
+	// Callback plugins_loaded action
+	function plugins_loaded_action()
+		{
+		$functionsCapacitor_class = new functionsCapacitor();
 		if (is_admin())
 			{
 			
 			}
 		else
 			{
-			add_filter('the_content',array(&$this,'the_content_filter'),5);
-			add_shortcode('fct', array(&$this,'fct_shortcode'));
+			add_filter('the_content',array($functionsCapacitor_class,'the_content_filter'),5);
+			add_shortcode('fct', array($functionsCapacitor_class,'fct_shortcode'));
 			}
-		}
-		
-	/* Callback functions for hooks, filters, etc */
-	
-	// Callback plugins_loaded action
-	function plugins_loaded_action()
-		{
-		$me = new functionsCapacitor();
+		add_action('widgets_init',create_function('','return register_widget("functionsCapacitor_widget");'));
 		}
 	
 	// Callback for the_content filter
 	function the_content_filter($content)
 		{
-		// Apply only if is page/post displayed
-		if (!is_single() AND !is_page()) return $content;
-		
 		$this->save_current_post();
 		
-		$custom_fields_content = '';
+		// Apply only if is page/post displayed
+		if (!is_single($this->current_post->ID) AND !is_page($this->current_post->ID)) return $content;
+		
 		$custom_fields = get_post_custom($this->current_post->ID);
+		$custom_fields_content = '';
 		foreach ($custom_fields as $custom_key => $custom_values)
 			{
-			if (in_array($custom_key,$this->supported_functions) AND function_exists($fct_name))
+			$fct_name = trim($custom_key);
+			if (in_array($fct_name,$this->supported_functions) AND function_exists($fct_name))
 				{
 				foreach ($custom_values as $custom_value)
 					{
-					$custom_value = html_entity_decode($custom_value);
-					$custom_value = str_replace('&#038;','&',$custom_value); // fix HTML entities
-					$custom_fields_content .= $this->function_content($custom_key,$custom_value,'content');
+					$fct_args = trim($custom_value);
+					$fct_args = html_entity_decode($fct_args);
+					$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
+					$custom_fields_content .= $this->function_content($fct_name,$fct_args,'content');
 					}
 				}
 			}
@@ -97,9 +98,9 @@ class functionsCapacitor
 			else
 				{
 				$fct_name = $att_key;
-				$att_value = html_entity_decode($att_value);
-				$att_value = str_replace('&#038;','&',$att_value); // fix HTML entities
-				$fct_args = $att_value;
+				$fct_args = trim($att_value);
+				$fct_args = html_entity_decode($fct_args);
+				$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
 				}
 				
 			if (in_array($fct_name,$this->supported_functions) AND function_exists($fct_name))
@@ -116,6 +117,27 @@ class functionsCapacitor
 		$this->restore_current_post();
 		
 		return $shortcode_content;
+		}
+		
+	function widget_content($args,$instance)
+		{
+		$this->save_current_post();
+		
+		$widget_content = '';
+		
+		$fct_name = trim($instance['function_name']);
+		$fct_args = trim($instance['function_args']);
+		$fct_args = html_entity_decode($fct_args);
+		$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
+		
+		if (in_array($fct_name,$this->supported_functions) AND function_exists($fct_name))
+			{
+			$widget_content .= $this->function_content($fct_name,$fct_args,'widget');
+			}
+		
+		$this->restore_current_post();
+		
+		return $widget_content;
 		}
 		
 	/* Common used methods */
@@ -156,7 +178,7 @@ class functionsCapacitor
 				$v = $pair_array[1];
 				if (strtolower(substr($v,0,6)) == 'array(')
 					{
-					// value is like array('string',integer)
+					// value is like array('string',integer,boolean)
 					$v_array = explode(',',substr($v,6,-1));
 					$v = array();
 					foreach ($v_array as $v_array_elt)
@@ -195,7 +217,7 @@ class functionsCapacitor
 		return $arguments_array;
 		}
 		
-	function implode_function_arguments($arguments_array)
+	function implode_function_arguments_array($arguments_array)
 		{
 		$ret = array();
         foreach ($arguments_array as $k => $v)
@@ -211,6 +233,7 @@ class functionsCapacitor
 		$fct_args = $this->magic_keywords_replace($fct_args);
 		
 		$arguments = $this->explode_function_arguments_string($fct_args);
+		$arguments['fct:target'] = $target;
 		$arguments['fct:container'] = '';
 		if (!$arguments['fct:container_class']) $arguments['fct:container_class'] = $fct_name;
 		
@@ -226,7 +249,11 @@ class functionsCapacitor
 				
 			case 'wp_get_recent_posts':
 				$arguments['fct:container'] = 'ul';
-				$function_content = $this->wp_get_recent_posts_content($arguments,$target);
+				if (!isset($arguments['exclude']))
+					{
+					$arguments['exclude'] = $this->current_post->ID;
+					}
+				$function_content = $this->wp_get_recent_posts_content($arguments);
 				break;
 				
 			case 'wp_list_bookmarks':
@@ -276,7 +303,7 @@ class functionsCapacitor
 		
 	/* methods to render API result as HTML ouput */
 
-	function wp_get_recent_posts_content($arguments,$target='content')
+	function wp_get_recent_posts_content($arguments)
 		{
 		$result_content = '';
 		$excerpt_length = apply_filters('excerpt_length',55);
@@ -289,7 +316,7 @@ class functionsCapacitor
 			$result_content .= '<li>';
 			$result_content .= '<a class="title" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
 			$result_content .= ''.$recent["post_title"].'';
-			$result_content .= '</a> ';
+			$result_content .= '</a>';
 			
 			if ($arguments['fct:show_excerpt'])
 				{
@@ -315,14 +342,109 @@ class functionsCapacitor
 							}
 						}
 					}
-				$result_content .= '<p class="excerpt">'.$post_excerpt.'</p> ';
+				if ($post_excerpt != '') $result_content .= "\r\n".'<p class="excerpt">'.$post_excerpt.'</p>';
 				}
 			
-			//$result_content .= ''.print_r($recent,true);
-			$result_content .= '</li>';
+			$result_content .= '</li>'."\r\n";
 			}
 		
 		return $result_content;
 		}
 	}
+	
+class functionsCapacitor_widget extends WP_Widget
+	{
+	var $functionsCapacitor_class;
+	
+	/* Constructor */
+	
+	function functionsCapacitor_widget()
+		{
+		$this->functionsCapacitor_class = new functionsCapacitor();
+		$widget_ops = array();
+		$widget_ops['classname'] = 'widget_functionsCapacitor';
+		$widget_ops['description'] = __('Back WordPress API to the widget');
+		$control_ops = array();
+		$control_ops['width'] = 400;
+		$control_ops['height'] = 350;
+		parent::WP_Widget(false,$name='functionsCapacitor',$widget_ops,$control_ops);
+		}
+		
+	/* widget callback methods */
+	
+	// widget content
+	function widget($args,$instance)
+		{
+		if (!isset($instance['title']))			 $instance['title']			 = '';
+		
+		$widget_content = $this->functionsCapacitor_class->widget_content($args,$instance);
+		
+		if (($instance['hide_if_empty'] == TRUE) AND ($widget_content == ''))
+			{
+			
+			}
+		else
+			{
+			extract($args);
+			if ($instance["title"] != '')
+				{
+				$widget_content = $before_title.$instance["title"].$after_title.$widget_content;
+				}
+			echo($before_widget.$widget_content.$after_widget);
+			}
+		}
+	
+	// widget setup form
+	function form($instance)
+		{
+		if (!isset($instance['title']))			 $instance['title']			 = '';
+		if (!isset($instance['function_name']))	 $instance['function_name']	 = 'wp_get_recent_posts';
+		if (!isset($instance['function_args']))	 $instance['function_args']	 = '';
+		?>
+		<p>
+			<label for="<?php echo $this->get_field_id("title"); ?>">
+				<?php _e( 'Title' ); ?>:
+			</label>
+			<input class="widefat" id="<?php echo $this->get_field_id("title"); ?>" name="<?php echo $this->get_field_name("title"); ?>" type="text" value="<?php echo esc_attr($instance["title"]); ?>" />
+		</p>
+		<p>
+			<label for="<?php echo $this->get_field_id('function_name'); ?>">
+				<?php _e('Select function'); ?>:
+			</label>
+			<select id="<?php echo $this->get_field_id('function_name'); ?>" name="<?php echo $this->get_field_name('function_name'); ?>">
+			<?php
+			foreach($this->functionsCapacitor_class->supported_functions as $supported_function)
+				{
+				$selected = $instance['function_name'] == $supported_function ? ' selected="selected"' : '';
+				echo('<option'.$selected.' value="'.$supported_function.'">'.$supported_function.'()</option>');
+				}
+			?>
+			</select>
+		</p>
+		<p>
+			<label for="<?php echo $this->get_field_id('function_args'); ?>">
+				<?php _e('Parameters'); ?>:
+			</label>
+			<textarea class="widefat" rows="6" cols="20" id="<?php echo $this->get_field_id('function_args'); ?>" name="<?php echo $this->get_field_name('function_args'); ?>"><?php echo esc_textarea($instance['function_args']); ?></textarea>
+		</p>
+		<p>
+			<input id="<?php echo $this->get_field_id('hide_if_empty'); ?>" name="<?php echo $this->get_field_name('hide_if_empty'); ?>" type="checkbox" <?php checked(isset($instance['hide_if_empty']) ? $instance['hide_if_empty'] : 0); ?> />
+			<label for="<?php echo $this->get_field_id('hide_if_empty'); ?>">
+				<?php _e('Hide if empty'); ?>
+			</label>
+		</p>
+		<?php
+		}
+	
+	// widget setup update
+	function update($new_instance,$old_instance)
+		{
+		$instance = $new_instance;
+		$instance['hide_if_empty'] = isset($new_instance['hide_if_empty']);
+		return $instance;
+		}
+	}
+
+add_action('plugins_loaded',array('functionsCapacitor','plugins_loaded_action'));
+
 ?>
