@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.5
+Version:		0.6
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -14,6 +14,7 @@ class functionsCapacitor
 	var $supported_functions = array(
 									'wp_get_archives',
 									'wp_get_recent_posts',
+									'wp_list_authors',
 									'wp_list_bookmarks',
 									'wp_list_categories',
 									'wp_list_pages',
@@ -50,7 +51,7 @@ class functionsCapacitor
 	// Callback for the_content filter
 	function the_content_filter($content)
 		{
-		$this->save_current_post();
+		$this->save_current_context();
 		
 		// Apply only if is page/post displayed
 		if (!is_single($this->current_post->ID) AND !is_page($this->current_post->ID)) return $content;
@@ -64,9 +65,7 @@ class functionsCapacitor
 				{
 				foreach ($custom_values as $custom_value)
 					{
-					$fct_args = trim($custom_value);
-					$fct_args = html_entity_decode($fct_args);
-					$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
+					$fct_args = $this->decode_function_arguments_string($custom_value);
 					$custom_fields_content .= $this->function_content($fct_name,$fct_args,'content');
 					}
 				}
@@ -77,7 +76,7 @@ class functionsCapacitor
 			$custom_fields_content = '<div class="functionsCapacitor">'.$custom_fields_content.'</div>';
 			}
 		
-		$this->restore_current_post();
+		$this->restore_current_context();
 		
 		return $content.$custom_fields_content;
 		}
@@ -85,7 +84,7 @@ class functionsCapacitor
 	// Callback for shortcode
 	function fct_shortcode($atts)
 		{
-		$this->save_current_post();
+		$this->save_current_context();
 		
 		$shortcode_content = '';
 		foreach ($atts as $att_key => $att_value)
@@ -98,9 +97,7 @@ class functionsCapacitor
 			else
 				{
 				$fct_name = $att_key;
-				$fct_args = trim($att_value);
-				$fct_args = html_entity_decode($fct_args);
-				$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
+				$fct_args = $this->decode_function_arguments_string($att_value);
 				}
 				
 			if (in_array($fct_name,$this->supported_functions) AND function_exists($fct_name))
@@ -114,41 +111,39 @@ class functionsCapacitor
 			$shortcode_content = '<div class="functionsCapacitor">'.$shortcode_content.'</div>';
 			}
 		
-		$this->restore_current_post();
+		$this->restore_current_context();
 		
 		return $shortcode_content;
 		}
 		
 	function widget_content($args,$instance)
 		{
-		$this->save_current_post();
+		$this->save_current_context();
 		
 		$widget_content = '';
 		
 		$fct_name = trim($instance['function_name']);
-		$fct_args = trim($instance['function_args']);
-		$fct_args = html_entity_decode($fct_args);
-		$fct_args = str_replace('&#038;','&',$fct_args); // fix HTML entities
 		
 		if (in_array($fct_name,$this->supported_functions) AND function_exists($fct_name))
 			{
+			$fct_args = $this->decode_function_arguments_string($instance['function_args']);
 			$widget_content .= $this->function_content($fct_name,$fct_args,'widget');
 			}
 		
-		$this->restore_current_post();
+		$this->restore_current_context();
 		
 		return $widget_content;
 		}
 		
 	/* Common used methods */
 		
-	function save_current_post()
+	function save_current_context()
 		{
 		GLOBAL $post;
 		$this->current_post = $post;
 		}
 		
-	function restore_current_post()
+	function restore_current_context()
 		{
 		GLOBAL $post;
 		$post = $this->current_post;
@@ -157,10 +152,17 @@ class functionsCapacitor
 	// Magic keywords replacement
 	function magic_keywords_replace($content)
 		{
-		$magic_keywords = array('%postID%');
-		$magic_values = array($this->current_post->ID);
+		$magic_keywords = array('%postID%','%postparent%','%postauthor%');
+		$magic_values = array($this->current_post->ID,$this->current_post->post_parent,$this->current_post->post_author);
 		$content = str_replace($magic_keywords,$magic_values,$content);
 		return $content;
+		}
+		
+	function decode_function_arguments_string($arguments_string)
+		{
+		$arguments_string = html_entity_decode($arguments_string);
+		$arguments_string = trim(str_replace('&#038;','&',$arguments_string)); // fix HTML entities
+		return $arguments_string;
 		}
 		
 	function explode_function_arguments_string($arguments_string)
@@ -170,13 +172,13 @@ class functionsCapacitor
 		foreach ($pairs as $pair)
 			{
 			$pair_array = explode('=', $pair,2);
-			$k = $pair_array[0];
+			$k = trim($pair_array[0]);
 			$arguments_array[$k] = '';
 			if (isset($pair_array[1]))
 				{
 				// value is not empty
-				$v = $pair_array[1];
-				if (strtolower(substr($v,0,6)) == 'array(')
+				$v = trim($pair_array[1]);
+				if ((strtolower(substr($v,0,6)) == 'array(') AND (substr($v,-1) == ')'))
 					{
 					// value is like array('string',integer,boolean)
 					$v_array = explode(',',substr($v,6,-1));
@@ -184,7 +186,7 @@ class functionsCapacitor
 					foreach ($v_array as $v_array_elt)
 						{
 						$v_array_elt = trim($v_array_elt);
-						if (substr($v_array_elt,0,1) == "'")
+						if ((substr($v_array_elt,0,1) == "'") AND (substr($v_array_elt,-1) == "'"))
 							{
 							$v_array_elt = substr($v_array_elt,1,-1);
 							}
@@ -254,6 +256,16 @@ class functionsCapacitor
 					$arguments['exclude'] = $this->current_post->ID;
 					}
 				$function_content = $this->wp_get_recent_posts_content($arguments);
+				break;
+				
+			case 'wp_list_authors':
+				$arguments['echo'] = '0'; // Never echo()
+				$arguments['fct:container'] = 'ul';
+				if (($arguments['style']=='none') OR ($arguments['html']==='0') OR ($arguments['html']===false))
+					{
+					$arguments['fct:container'] = 'div';
+					}
+				$function_content = wp_list_authors($arguments);
 				break;
 				
 			case 'wp_list_bookmarks':

@@ -1,6 +1,6 @@
 === functionsCapacitor ===
 Contributors: oliezekat
-Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories
+Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories, widget
 Requires at least: 2.5.0
 Tested up to: 3.3.1
 Stable tag: trunk
@@ -24,7 +24,7 @@ One shortcode tag can request several functions, input [fct function_name1="argu
 
 = Method with a widget =
 
-Add a functionsCapacitor widget, select a function, input functions parameters like "parameter1=value&parameter2=value" (without quotes).
+Add a functionsCapacitor widget, select a function, input function parameters like "parameter1=value&parameter2=value" (without quotes).
 
 = Method by custom fields =
 
@@ -86,9 +86,14 @@ Not supported issues :
 
 Use these keywords to obtain variables values into your functions arguments :
 
-* %postID% => $post->ID of post or page where made the request :
+* %postID% => $post->ID,
+ ID of post or page where made the request :
  related post/page into a shortcode,
  or current post/page into a widget.
+* %postparent% => $post->post_parent,
+ ID of parent page where made the request.
+* %postauthor% => $post->post_author,
+ author ID of post where made the request.
 
 = Special functions parameters =
 
@@ -104,6 +109,8 @@ Use these keywords to obtain variables values into your functions arguments :
  rendered as UL list,
  with exclude=%postID% as default,
  fct:show_excerpt=1|true to display posts excerpts
+* wp_list_authors()
+ with echo=0 as default
 * wp_list_bookmarks()
  with echo=0 as default
 * wp_list_categories()
@@ -120,7 +127,41 @@ See [WordPress Codex](http://codex.wordpress.org/ "Wordpress documentation") abo
 
 Need you to support more functions, mail to oliezekat@yahoo.fr
 
+== Frequently Asked Questions ==
+
+= Is it safe ? =
+
+Yes ! And you can install functionsCapacitor on WordPress MU.
+
+* functionsCapacitor not execute or eval users input (function name or arguments).
+* functionsCapacitor output is managed by WordPress itself, and related to users role.
+ Example: wp_list_pages() function will not return private pages if current user is anonymous.
+
+= How come from functions capacitor idea ? =
+
+> I was standing on my chair in front of the computer,
+> I was copy-paste a hack into a template,
+> the desk was wet,
+> my mouse slipped, right button hit the flowerpot,
+> and when I saw the result on screen I had a revelation ! A vision !
+> The functions capacitor !
+
+= D'où vient l'idée du convecteur de functions ? =
+
+> J'étais assis devant mon ordinateur,
+> j'allais copier-coller un hack dans un template,
+> le bureau était mouillé,
+> ma souris a glissé, le bouton-droit a heurté le pot de fleurs,
+> et en voyant le résultat à l'écran j'ai eu une révélation ! Une vision !
+> Le convecteur de fonctions !
+
 == Changelog ==
+
+= 0.6 =
+
+* support wp_list_authors().
+* add %postparent% magic keyword.
+* add %postauthor% magic keyword.
 
 = 0.5 =
 
@@ -147,24 +188,4 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 = 0.1 =
 
 * Experimental release which support wp_get_archives(), wp_list_bookmarks(), wp_list_categories(), and wp_list_pages().
-
-== Frequently Asked Questions ==
-
-= How come from functions capacitor idea ? =
-
-> I was standing on my chair in front of the computer,
-> I was copy-paste a hack into a template,
-> the desk was wet,
-> my mouse slipped, right button hit the flowerpot,
-> and when I saw the result on screen I had a revelation ! A vision !
-> The functions capacitor !
-
-= D'où vient l'idée du convecteur de functions ? =
-
-> J'étais assis devant mon ordinateur,
-> j'allais copier-coller un hack dans un template,
-> le bureau était mouillé,
-> ma souris a glissé, le bouton-droit a heurté le pot de fleurs,
-> et en voyant le résultat à l'écran j'ai eu une révélation ! Une vision !
-> Le convecteur de fonctions !
 
