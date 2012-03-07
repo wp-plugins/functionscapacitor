@@ -56,11 +56,13 @@ This method is applied if post/page were displayed.
 = HTML output =
 
 Any functionsCapacitor request will insert `<div class="functionsCapacitor">functions output</div>`.
+ Shortcode method allow to personalize main container like
+ [fct container="HTML tag name" class="class(es) name(s)" function1="args" function2="args"]
 
 Some functions output (which not return a HTML container) were inserted like
  `<ul class="function_name">function output</ul>`
  or `<div class="function_name">function output</div>`.
- See "fct:container_class" special parameter.
+ See "fct:container_class" special parameter (bellow) to personalize "class" attribute.
  
 = Functions arguments syntax =
 
@@ -100,6 +102,7 @@ Use these keywords to obtain variables values into your functions arguments :
 * fct:container_class to set container "class" attribute.
  Function name as default.
  Not applied if the function still return a container (see Codex to personalize them).
+ Example with shortcode: [fct function_name="fct:container_class=name&param1=value&param2=value"].
 
 == Supported functions ==
 
@@ -108,7 +111,10 @@ Use these keywords to obtain variables values into your functions arguments :
 * wp_get_recent_posts()
  rendered as UL list,
  with exclude=%postID% as default,
- fct:show_excerpt=1|true to display posts excerpts
+ fct:show_excerpt=1|true to display posts excerpts,
+ fct:show_thumbnail=1|true to display post thumbnail,
+ with fct:thumbnail_size=thumbnail|medium|large
+ or size name defined with add_image_size() into theme's file functions.php 
 * wp_list_authors()
  with echo=0 as default
 * wp_list_bookmarks()
@@ -156,6 +162,11 @@ Yes ! And you can install functionsCapacitor on WordPress MU.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.7 =
+
+* add fct:show_thumbnail and fct:thumbnail_size parameters for wp_get_recent_posts().
+* allow to personalize shortcode main container.
 
 = 0.6 =
 

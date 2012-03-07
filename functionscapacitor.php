@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.6
+Version:		0.7
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -22,7 +22,8 @@ class functionsCapacitor
 									'wp_tag_cloud'
 									);
 									
-	var $current_post; // To save/restore it
+	var $current_post;		 // To save/restore it
+	var $current_context;	 // To save/restore it
 	
 	/* Constructor */
 	
@@ -87,6 +88,8 @@ class functionsCapacitor
 		$this->save_current_context();
 		
 		$shortcode_content = '';
+		$shortcode_container = 'div';
+		$shortcode_class = 'functionsCapacitor';
 		foreach ($atts as $att_key => $att_value)
 			{
 			if (is_numeric($att_key))
@@ -104,11 +107,19 @@ class functionsCapacitor
 				{
 				$shortcode_content .= $this->function_content($fct_name,$fct_args,'content');
 				}
+			else if ($fct_name == 'container')
+				{
+				$shortcode_container = $fct_args;
+				}
+			else if ($fct_name == 'class')
+				{
+				$shortcode_class = $fct_args;
+				}
 			}
 			
-		if ($shortcode_content != '')
+		if (($shortcode_content != '') AND ($shortcode_container != ''))
 			{
-			$shortcode_content = '<div class="functionsCapacitor">'.$shortcode_content.'</div>';
+			$shortcode_content = '<'.$shortcode_container.' class="'.$shortcode_class.'">'.$shortcode_content.'</'.$shortcode_container.'>';
 			}
 		
 		$this->restore_current_context();
@@ -141,6 +152,7 @@ class functionsCapacitor
 		{
 		GLOBAL $post;
 		$this->current_post = $post;
+		$this->current_context = array();
 		}
 		
 	function restore_current_context()
@@ -255,6 +267,10 @@ class functionsCapacitor
 					{
 					$arguments['exclude'] = $this->current_post->ID;
 					}
+				if (($arguments['fct:show_thumbnail']) AND (!isset($arguments['fct:thumbnail_size'])))
+					{
+					$arguments['fct:thumbnail_size'] = 'thumbnail';
+					}
 				$function_content = $this->wp_get_recent_posts_content($arguments);
 				break;
 				
@@ -321,11 +337,18 @@ class functionsCapacitor
 		$excerpt_length = apply_filters('excerpt_length',55);
 		$excerpt_more = '[...]';
 		$strip_shortcodes_exists = function_exists('strip_shortcodes');
+		$get_the_post_thumbnail_exists = function_exists('get_the_post_thumbnail');
 		
 		$recent_posts = wp_get_recent_posts($arguments);
 		foreach($recent_posts as $recent)
 			{
 			$result_content .= '<li>';
+			
+			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
+				{
+				$result_content .= get_the_post_thumbnail($recent["ID"],$arguments['fct:thumbnail_size'])."\r\n";
+				}
+			
 			$result_content .= '<a class="title" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
 			$result_content .= ''.$recent["post_title"].'';
 			$result_content .= '</a>';
