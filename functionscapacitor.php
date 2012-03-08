@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.7
+Version:		0.8
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -12,6 +12,7 @@ Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 class functionsCapacitor
 	{
 	var $supported_functions = array(
+									'get_the_tag_list',
 									'wp_get_archives',
 									'wp_get_recent_posts',
 									'wp_list_authors',
@@ -89,7 +90,8 @@ class functionsCapacitor
 		
 		$shortcode_content = '';
 		$shortcode_container = 'div';
-		$shortcode_class = 'functionsCapacitor';
+		$shortcode_class = ' class="functionsCapacitor"';
+		$shortcode_style = '';
 		foreach ($atts as $att_key => $att_value)
 			{
 			if (is_numeric($att_key))
@@ -109,17 +111,28 @@ class functionsCapacitor
 				}
 			else if ($fct_name == 'container')
 				{
-				$shortcode_container = $fct_args;
+				$shortcode_container = ''.$fct_args;
 				}
 			else if ($fct_name == 'class')
 				{
-				$shortcode_class = $fct_args;
+				if ($fct_args == '')
+					{
+					$shortcode_class = '';
+					}
+				else
+					{
+					$shortcode_class = ' class="'.$fct_args.'"';
+					}
+				}
+			else if ($fct_name == 'style')
+				{
+				$shortcode_style = ' style="'.$fct_args.'"';
 				}
 			}
 			
 		if (($shortcode_content != '') AND ($shortcode_container != ''))
 			{
-			$shortcode_content = '<'.$shortcode_container.' class="'.$shortcode_class.'">'.$shortcode_content.'</'.$shortcode_container.'>';
+			$shortcode_content = '<'.$shortcode_container.''.$shortcode_class.''.$shortcode_style.'>'.$shortcode_content.'</'.$shortcode_container.'>';
 			}
 		
 		$this->restore_current_context();
@@ -167,7 +180,51 @@ class functionsCapacitor
 		$magic_keywords = array('%postID%','%postparent%','%postauthor%');
 		$magic_values = array($this->current_post->ID,$this->current_post->post_parent,$this->current_post->post_author);
 		$content = str_replace($magic_keywords,$magic_values,$content);
+		if (strpos($content,'%defaultcatID%') !== FALSE)
+			{
+			$content = str_replace('%defaultcatID%',$this->get_magic_keyword_value('%defaultcatID%'),$content);
+			}
+		if (strpos($content,'%posttagIDs%') !== FALSE)
+			{
+			$content = str_replace('%posttagIDs%',$this->get_magic_keyword_value('%posttagIDs%'),$content);
+			}
+		if (strpos($content,'%posttagslugs%') !== FALSE)
+			{
+			$content = str_replace('%posttagslugs%',$this->get_magic_keyword_value('%posttagslugs%'),$content);
+			}
 		return $content;
+		}
+		
+	function get_magic_keyword_value($key='')
+		{
+		if ($this->current_context[$key])
+			{
+			return $this->current_context[$key];
+			}
+		else
+			{
+			$value = '';
+			switch($key)
+				{
+				case 'default_category':
+					$value = get_option('default_category');
+					break;
+				
+				case '%defaultcatID%':
+					$value = ''.$this->get_magic_keyword_value('default_category');
+					break;
+					
+				case '%posttagIDs%':
+					$value = ''.implode(',',wp_get_post_tags($this->current_post->ID,array('fields'=>'ids')));
+					break;
+					
+				case '%posttagslugs%':
+					$value = ''.implode(',',wp_get_post_tags($this->current_post->ID,array('fields'=>'slugs')));
+					break;
+				}
+			$this->current_context[$key] = $value;
+			return $value;
+			}
 		}
 		
 	function decode_function_arguments_string($arguments_string)
@@ -214,8 +271,15 @@ class functionsCapacitor
 							{
 							$v_array_elt = intval($v_array_elt);
 							}
-						$v[] = $v_array_elt;
+						if ($v_array_elt != '')
+							{
+							$v[] = $v_array_elt;
+							}
 						}
+					}
+				else if ((substr($v,0,1) == "'") AND (substr($v,-1) == "'"))
+					{
+					$v = substr($v,1,-1);
 					}
 				else if (strtolower($v) == 'true')
 					{
@@ -248,57 +312,80 @@ class functionsCapacitor
 		
 		$arguments = $this->explode_function_arguments_string($fct_args);
 		$arguments['fct:target'] = $target;
-		$arguments['fct:container'] = '';
-		if (!$arguments['fct:container_class']) $arguments['fct:container_class'] = $fct_name;
 		
+		$function_container = '';
 		$function_content = '';
 		switch($fct_name)
 			{
+			case 'get_the_tag_list':
+				if (is_single($this->current_post->ID) OR is_page($this->current_post->ID))
+					{
+					if (!isset($arguments['before']))
+						{
+						$arguments['before'] = '';
+						}
+					if (!isset($arguments['sep']))
+						{
+						$arguments['sep'] = ' ';
+						}
+					if (!isset($arguments['after']))
+						{
+						$arguments['after'] = '';
+						}
+					$function_container = 'div';
+					$function_content = get_the_tag_list($arguments['before'],$arguments['sep'],$arguments['after']);
+					}
+				break;
+				
 			case 'wp_get_archives':
 				$arguments['echo'] = '0'; // Never echo()
 				$arguments['format'] = 'html'; // Only HTML output
-				$arguments['fct:container'] = 'ul';
+				$function_container = 'ul';
 				$function_content = wp_get_archives($arguments);
 				break;
 				
 			case 'wp_get_recent_posts':
-				$arguments['fct:container'] = 'ul';
 				if (!isset($arguments['exclude']))
 					{
 					$arguments['exclude'] = $this->current_post->ID;
+					}
+				if (isset($arguments['fct:thumbnail_size']))
+					{
+					$arguments['fct:show_thumbnail'] = TRUE;
 					}
 				if (($arguments['fct:show_thumbnail']) AND (!isset($arguments['fct:thumbnail_size'])))
 					{
 					$arguments['fct:thumbnail_size'] = 'thumbnail';
 					}
+				$function_container = 'ul';
 				$function_content = $this->wp_get_recent_posts_content($arguments);
 				break;
 				
 			case 'wp_list_authors':
 				$arguments['echo'] = '0'; // Never echo()
-				$arguments['fct:container'] = 'ul';
+				$function_container = 'ul';
 				if (($arguments['style']=='none') OR ($arguments['html']==='0') OR ($arguments['html']===false))
 					{
-					$arguments['fct:container'] = 'div';
+					$function_container = 'div';
 					}
 				$function_content = wp_list_authors($arguments);
 				break;
 				
 			case 'wp_list_bookmarks':
 				$arguments['echo'] = '0'; // Never echo()
-				$arguments['fct:container'] = 'ul';
+				$function_container = 'ul';
 				$function_content = wp_list_bookmarks($arguments);
 				break;
 			
 			case 'wp_list_categories':
 				$arguments['echo'] = '0'; // Never echo()
-				$arguments['fct:container'] = 'ul';
+				$function_container = 'ul';
 				$function_content = wp_list_categories($arguments);
 				break;
 				
 			case 'wp_list_pages':
 				$arguments['echo'] = '0'; // Never echo()
-				$arguments['fct:container'] = 'ul';
+				$function_container = 'ul';
 				$function_content = wp_list_pages($arguments);
 				break;
 				
@@ -315,15 +402,36 @@ class functionsCapacitor
 					}
 				if ($arguments['format'] == 'flat')
 					{
-					$arguments['fct:container'] = 'div';
+					$function_container = 'div';
 					}
 				$function_content = wp_tag_cloud($arguments);
 				break;
 			}
-		
-		if (($function_content != '') AND ($arguments['fct:container'] != ''))
+			
+		if (isset($arguments['fct:container']))
 			{
-			$function_content = '<'.$arguments['fct:container'].' class="'.$arguments['fct:container_class'].'">'.$function_content.'</'.$arguments['fct:container'].'>';
+			$function_container = ''.$arguments['fct:container'];
+			}
+		if (($function_content != '') AND ($function_container != ''))
+			{
+			$function_style = '';
+			if ($arguments['fct:container_style'] != '')
+				{
+				$function_style = ' style="'.$arguments['fct:container_style'].'"';
+				}
+			$function_class = '';
+			if (isset($arguments['fct:container_class']))
+				{
+				if ($arguments['fct:container_class'] != '')
+					{
+					$function_class = ' class="'.$arguments['fct:container_class'].'"';
+					}
+				}
+			else
+				{
+				$function_class = ' class="'.$fct_name.'"';
+				}
+			$function_content = '<'.$function_container.''.$function_class.''.$function_style.'>'.$function_content.'</'.$function_container.'>';
 			}
 			
 		return $function_content;
@@ -346,7 +454,9 @@ class functionsCapacitor
 			
 			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
 				{
+				$result_content .= '<a class="thumbnail" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
 				$result_content .= get_the_post_thumbnail($recent["ID"],$arguments['fct:thumbnail_size'])."\r\n";
+				$result_content .= '</a>';
 				}
 			
 			$result_content .= '<a class="title" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';

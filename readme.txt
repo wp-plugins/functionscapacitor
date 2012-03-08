@@ -1,6 +1,6 @@
 === functionsCapacitor ===
 Contributors: oliezekat
-Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories, widget
+Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories, widget, wordpressmu, wpmu, wpms, multi-site, multisite
 Requires at least: 2.5.0
 Tested up to: 3.3.1
 Stable tag: trunk
@@ -11,10 +11,22 @@ This plugin allow to apply some WordPress API's functions into your post/page co
 
 > Back WordPress API to the content.
 
-You can request some (supported*) functions of WordPress API with same syntax for arguments into your post or page content.
+You can request some* functions of WordPress API with same syntax for arguments into your post or page content.
  functionsCapacitor will insert function result into your content as HTML output.
 
-(*) see "Other Notes" for full list.
+(*) see [Supported functions](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-functions).
+
+= Features =
+
+* Safe process to use this plugin on WordPress MU or WP MultiSite.
+* Allow to personalize [Embedded output](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Embedded-output)
+ for each functions
+* Easy and powerfull [Functions arguments syntax](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Functions-arguments-syntax)
+ to apply any WordPress API options.
+* Generic functions arguments with [Magic keywords](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords)
+* Structured source-code to prevent any conflict.
+
+Three methods to use WordPress API functions :
 
 = Method by shortcode tag =
 
@@ -38,13 +50,13 @@ This method is applied if post/page were displayed.
 
 * Tag cloud of popular posts tags,
  insert [fct wp_tag_cloud]
-* List of pages,
- insert [fct wp_list_pages="title_li="]
 * List of children pages of current page,
  insert [fct wp_list_pages="title_li=&child_of=%postID%&depth=1"]
 * List of category's recent posts with excerpts,
  insert [fct wp_get_recent_posts="category=X&fct:show_excerpt=1"]
  with X equal category ID number
+* List of categories without default category,
+ insert [fct wp_list_categories="title_li=&exclude=%defaultcatID%"]
 
 == Installation ==
 
@@ -53,38 +65,49 @@ This method is applied if post/page were displayed.
 
 == Other Notes ==
 
-= HTML output =
+== Embedded output ==
 
 Any functionsCapacitor request will insert `<div class="functionsCapacitor">functions output</div>`.
  Shortcode method allow to personalize main container like
- [fct container="HTML tag name" class="class(es) name(s)" function1="args" function2="args"]
+ [fct container="HTML tag name" class="class(es) name(s)" style="CSS properties" function1="args" function2="args"].
+ set container="" to remove main container.
 
-Some functions output (which not return a HTML container) were inserted like
+Some functions output were inserted with dedicated container like
  `<ul class="function_name">function output</ul>`
  or `<div class="function_name">function output</div>`.
- See "fct:container_class" special parameter (bellow) to personalize "class" attribute.
+ Personalize this container with [Special functions parameters](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Special-functions-parameters).
  
-= Functions arguments syntax =
+== Functions arguments syntax ==
 
 Follow these examples to setup your requests :
 
-* "parameter1=something&parameter2=25", parameter1 and parameter2 typed as strings.
-* "parameter1=something&parameter2=false", parameter2 typed as boolean.
-* "parameter1=&parameter2=something", parameter1 equal empty string.
-* "parameter1=something&parameter2=array('something','something')", parameter2 typed as an array of 2 strings.
-* "parameter1=something&parameter2=array(10,5,20)", parameter2 typed as an array of 3 integers.
-* "parameter1=something&parameter2=array(true,false)", parameter2 typed as an array of 2 booleans.
+* "parameter1=something&parameter2=25",
+ parameter1 and parameter2 typed as strings.
+* "parameter1=something&parameter2=false",
+ parameter2 typed as boolean.
+* "parameter1=&parameter2= &parameter3=''",
+ any parameters equal empty string.
+* "parameter1= something &parameter2=' something '",
+ parameter1 equal 'something',
+ parameter2 equal ' something '.
+* "parameter1=something&parameter2=array('something','something')",
+ parameter2 typed as an array of 2 strings.
+* "parameter1=something&parameter2=array(10,5,20)",
+ parameter2 typed as an array of 3 integers.
+* "parameter1=something&parameter2=array(true,false)",
+ parameter2 typed as an array of 2 booleans.
 
 Not supported issues :
 
 * parameter's value can't contain a & character.
 * parameter's value can't contain an associative array like array('name'=>value,'name'=>value).
 * parameter's value can't contain an array of arrays.
-* parameter's value can't contain a PHP variable like $post->ID, see "Magic keywords" bellow.
+* parameter's value can't contain a PHP variable like $post->ID,
+ see [Magic keywords](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords).
 * parameter's value can't request a PHP or WordPress function.
 * parameter's value can't contain PHP code.
 
-= Magic keywords =
+== Magic keywords ==
 
 Use these keywords to obtain variables values into your functions arguments :
 
@@ -96,25 +119,45 @@ Use these keywords to obtain variables values into your functions arguments :
  ID of parent page where made the request.
 * %postauthor% => $post->post_author,
  author ID of post where made the request.
+* %defaultcatID% => default_category,
+ ID of default category for newest posts.
+* %posttagIDs% => wp_get_post_tags(),
+ string of current post tags IDs as "1,2,3,..."
+* %posttagslugs% => wp_get_post_tags(),
+ string of current post tags slugs as "slug-name,slug-name,..."
+ 
+You can use magic keywords into an array.
+ Example: wp_list_categories="exclude=array(%defaultcatID%,1,2,...)"
 
-= Special functions parameters =
+== Special functions parameters ==
 
+* fct:container to set HTML tag of function container.
+ Set "fct:container=''" to remove this container.
+ Each functions have a default container related to its output.
 * fct:container_class to set container "class" attribute.
  Function name as default.
- Not applied if the function still return a container (see Codex to personalize them).
  Example with shortcode: [fct function_name="fct:container_class=name&param1=value&param2=value"].
+* fct:container_style to set container "style" attribute.
+
+functionsCapacitor not create a container if the API function still return a container.
+ See [WordPress Codex](http://codex.wordpress.org/Function_Reference "Wordpress documentation") to personalize them.
 
 == Supported functions ==
 
+* get_the_tag_list()
+ with before=''&sep=' '&after='' as default,
+ apply only on page or post,
+ rendered into DIV container
 * wp_get_archives()
  with echo=0&format=html as default
 * wp_get_recent_posts()
- rendered as UL list,
+ rendered as list with UL container,
  with exclude=%postID% as default,
  fct:show_excerpt=1|true to display posts excerpts,
  fct:show_thumbnail=1|true to display post thumbnail,
- with fct:thumbnail_size=thumbnail|medium|large
- or size name defined with add_image_size() into theme's file functions.php 
+ with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
+ or size name defined with add_image_size() into theme's file functions.php,
+ fct:show_thumbnail=true if fct:thumbnail_size is defined
 * wp_list_authors()
  with echo=0 as default
 * wp_list_bookmarks()
@@ -124,12 +167,13 @@ Use these keywords to obtain variables values into your functions arguments :
 * wp_list_pages()
  with echo=0 as default
 * wp_nav_menu()
- with echo=false as default
+ with echo=false as default,
+ see Codex to setting its container
 * wp_tag_cloud()
  with echo=0 as default,
  format=flat|list only
 
-See [WordPress Codex](http://codex.wordpress.org/ "Wordpress documentation") about these functions and their arguments syntax.
+See [WordPress Codex](http://codex.wordpress.org/Function_Reference "Wordpress documentation") about these functions and their arguments syntax.
 
 Need you to support more functions, mail to oliezekat@yahoo.fr
 
@@ -137,7 +181,7 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 
 = Is it safe ? =
 
-Yes ! And you can install functionsCapacitor on WordPress MU.
+Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 
 * functionsCapacitor not execute or eval users input (function name or arguments).
 * functionsCapacitor output is managed by WordPress itself, and related to users role.
@@ -162,6 +206,16 @@ Yes ! And you can install functionsCapacitor on WordPress MU.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.8 =
+
+* add fct:container special parameter.
+* support get_the_tag_list().
+* allow to personalize "style" attribute of shortcode main container.
+* add fct:container_style special parameter.
+* add %defaultcatID% magic keyword.
+* add %posttagIDs% magic keyword.
+* add %posttagslugs% magic keyword.
 
 = 0.7 =
 
