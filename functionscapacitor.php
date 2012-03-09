@@ -459,7 +459,7 @@ class functionsCapacitor
 		$recent_posts = wp_get_recent_posts($arguments);
 		foreach($recent_posts as $recent)
 			{
-			if ($recent["post_status"] == 'private')
+			if ($recent['post_status'] == 'private')
 				{
 				if ($arguments['fct:perm'] == 'readable')
 					{
@@ -478,21 +478,21 @@ class functionsCapacitor
 			
 			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
 				{
-				$result_content .= '<a class="thumbnail" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
-				$result_content .= get_the_post_thumbnail($recent["ID"],$arguments['fct:thumbnail_size'])."\r\n";
+				$result_content .= '<a class="thumbnail" href="'.get_permalink($recent['ID']).'" title="'.$recent['post_title'].'">';
+				$result_content .= get_the_post_thumbnail($recent['ID'],$arguments['fct:thumbnail_size'])."\r\n";
 				$result_content .= '</a>';
 				}
 			
-			$result_content .= '<a class="title" href="'.get_permalink($recent["ID"]).'" title="'.$recent["post_title"].'">';
-			$result_content .= ''.$recent["post_title"].'';
+			$result_content .= '<a class="title" href="'.get_permalink($recent['ID']).'" title="'.$recent['post_title'].'">';
+			$result_content .= ''.$recent['post_title'].'';
 			$result_content .= '</a>';
 			
 			if ($arguments['fct:show_excerpt'])
 				{
-				$post_excerpt = $recent["post_excerpt"];
-				if ($post_excerpt == '')
+				$post_excerpt = trim($recent['post_excerpt']);
+				if (($post_excerpt == '') AND ($recent['post_password'] == ''))
 					{
-					$post_excerpt = $recent["post_content"];
+					$post_excerpt = trim($recent['post_content']);
 					if ($strip_shortcodes_exists == TRUE) $post_excerpt = strip_shortcodes($post_excerpt);
 					if (($more_pos = strpos($post_excerpt,'<!--more-->')) AND ($more_pos !== FALSE))
 						{
