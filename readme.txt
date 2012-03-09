@@ -153,7 +153,7 @@ functionsCapacitor not create a container if the API function still return a con
 * wp_get_recent_posts()
  rendered as list with UL container,
  with exclude=%postID%&suppress_filters=false&post_status=publish,private as default,
- fct:perm=readable (as default) to hide private posts,
+ fct:perm=readable (as default) to display private posts if user is allowed,
  fct:show_excerpt=1|true to display posts excerpts,
  fct:show_thumbnail=1|true to display post thumbnail,
  with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
