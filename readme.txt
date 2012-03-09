@@ -152,13 +152,8 @@ functionsCapacitor not create a container if the API function still return a con
  with echo=0&format=html as default
 * wp_get_recent_posts()
  rendered as list with UL container,
- with exclude=%postID%&suppress_filters=false&post_status=publish,private as default,
- fct:perm=readable (as default) to display private posts if user is allowed,
- fct:show_excerpt=1|true to display posts excerpts,
- fct:show_thumbnail=1|true to display post thumbnail,
- with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
- or size name defined with add_image_size() into theme's file functions.php,
- fct:show_thumbnail=true if fct:thumbnail_size is defined
+ with exclude=%postID%&suppress_filters=false&post_status=publish&fct:perm=readable as default
+ (see bellow)
 * wp_list_authors()
  with echo=0 as default
 * wp_list_bookmarks()
@@ -173,10 +168,23 @@ functionsCapacitor not create a container if the API function still return a con
 * wp_tag_cloud()
  with echo=0 as default,
  format=flat|list only
-
+ 
 See [WordPress Codex](http://codex.wordpress.org/Function_Reference "Wordpress documentation") about these functions and their arguments syntax.
 
 Need you to support more functions, mail to oliezekat@yahoo.fr
+
+= wp_get_recent_posts() =
+
+* if fct:perm=readable hide draft, future, pending, protected posts
+ but display private posts if user is allowed.
+* if fct:perm='' not output permalink of draft, future, pending, private posts.
+* set fct:show_excerpt=1|true to display posts excerpts.
+* set fct:show_thumbnail=1|true to display post thumbnail,
+ with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
+ or size name defined with add_image_size() into theme's file functions.php.
+* fct:show_thumbnail=true if fct:thumbnail_size is defined
+* display excerpt and thumbnail for draft, future, pending, private, and protected posts
+ but not create an excerpt from content.
 
 == Frequently Asked Questions ==
 
@@ -207,6 +215,14 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.9.2 =
+
+* set post_status=publish as default for wp_get_recent_posts().
+* allow post_status=draft|future|pending for wp_get_recent_posts(),
+ but require to set fct:perm='' to display these posts.
+* if request wp_get_recent_posts() with fct:perm='',
+ any posts with as draft, future, pending, private status are display without permalink.
 
 = 0.9 =
 

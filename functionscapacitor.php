@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.9
+Version:		0.9.2
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -349,6 +349,10 @@ class functionsCapacitor
 					{
 					$arguments['suppress_filters'] = false;
 					}
+				if (!isset($arguments['post_status']))
+					{
+					$arguments['post_status'] = 'publish';
+					}
 				if (!isset($arguments['fct:perm']))
 					{
 					$arguments['fct:perm'] = 'readable';
@@ -365,7 +369,7 @@ class functionsCapacitor
 					{
 					$arguments['fct:thumbnail_size'] = 'thumbnail';
 					}
-				$arguments['post_status'] = 'publish,private';
+				
 				$function_container = 'ul';
 				$function_content = $this->wp_get_recent_posts_content($arguments);
 				break;
@@ -459,6 +463,8 @@ class functionsCapacitor
 		$recent_posts = wp_get_recent_posts($arguments);
 		foreach($recent_posts as $recent)
 			{
+			$recent_permalink = get_permalink($recent['ID']);
+			
 			if ($recent['post_status'] == 'private')
 				{
 				if ($arguments['fct:perm'] == 'readable')
@@ -470,6 +476,24 @@ class functionsCapacitor
 					}
 				else
 					{
+					if (current_user_can('read_private_posts') == FALSE)
+						{
+						$recent_permalink = '';
+						}
+					}
+				}
+			else if ($recent['post_status'] != 'publish')
+				{
+				if ($arguments['fct:perm'] == 'readable')
+					{
+					continue;
+					}
+				$recent_permalink = '';
+				}
+			else if ($recent['post_password'] != '')
+				{
+				if ($arguments['fct:perm'] == 'readable')
+					{
 					continue;
 					}
 				}
@@ -478,19 +502,33 @@ class functionsCapacitor
 			
 			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
 				{
-				$result_content .= '<a class="thumbnail" href="'.get_permalink($recent['ID']).'" title="'.$recent['post_title'].'">';
+				if ($recent_permalink != '')
+					{
+					$result_content .= '<a class="thumbnail" href="'.$recent_permalink.'" title="'.$recent['post_title'].'">';
+					}
+				else
+					{
+					$result_content .= '<a class="thumbnail" title="'.$recent['post_title'].'">';
+					}
 				$result_content .= get_the_post_thumbnail($recent['ID'],$arguments['fct:thumbnail_size'])."\r\n";
 				$result_content .= '</a>';
 				}
 			
-			$result_content .= '<a class="title" href="'.get_permalink($recent['ID']).'" title="'.$recent['post_title'].'">';
+			if ($recent_permalink != '')
+				{
+				$result_content .= '<a class="title" href="'.$recent_permalink.'" title="'.$recent['post_title'].'">';			
+				}
+			else
+				{
+				$result_content .= '<a class="title" title="'.$recent['post_title'].'">';
+				}
 			$result_content .= ''.$recent['post_title'].'';
 			$result_content .= '</a>';
 			
 			if ($arguments['fct:show_excerpt'])
 				{
 				$post_excerpt = trim($recent['post_excerpt']);
-				if (($post_excerpt == '') AND ($recent['post_password'] == ''))
+				if (($post_excerpt == '') AND ($recent['post_password'] == '') AND ($recent['post_status'] == 'publish'))
 					{
 					$post_excerpt = trim($recent['post_content']);
 					if ($strip_shortcodes_exists == TRUE) $post_excerpt = strip_shortcodes($post_excerpt);
@@ -511,7 +549,7 @@ class functionsCapacitor
 							}
 						}
 					}
-				if ($post_excerpt != '') $result_content .= "\r\n".'<p class="excerpt">'.$post_excerpt.'</p>';
+				$result_content .= "\r\n".'<p class="excerpt">'.$post_excerpt.'</p>';
 				}
 			
 			$result_content .= '</li>'."\r\n";
