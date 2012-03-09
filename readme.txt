@@ -152,7 +152,8 @@ functionsCapacitor not create a container if the API function still return a con
  with echo=0&format=html as default
 * wp_get_recent_posts()
  rendered as list with UL container,
- with exclude=%postID% as default,
+ with exclude=%postID%&suppress_filters=false&post_status=publish,private as default,
+ fct:perm=readable (as default) to hide private posts,
  fct:show_excerpt=1|true to display posts excerpts,
  fct:show_thumbnail=1|true to display post thumbnail,
  with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
@@ -206,6 +207,10 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.9 =
+
+* add fct:perm=readable for wp_get_recent_posts().
 
 = 0.8 =
 

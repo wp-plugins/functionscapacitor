@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.8
+Version:		0.9
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -345,6 +345,14 @@ class functionsCapacitor
 				break;
 				
 			case 'wp_get_recent_posts':
+				if (!isset($arguments['suppress_filters']))
+					{
+					$arguments['suppress_filters'] = false;
+					}
+				if (!isset($arguments['fct:perm']))
+					{
+					$arguments['fct:perm'] = 'readable';
+					}
 				if (!isset($arguments['exclude']))
 					{
 					$arguments['exclude'] = $this->current_post->ID;
@@ -357,6 +365,7 @@ class functionsCapacitor
 					{
 					$arguments['fct:thumbnail_size'] = 'thumbnail';
 					}
+				$arguments['post_status'] = 'publish,private';
 				$function_container = 'ul';
 				$function_content = $this->wp_get_recent_posts_content($arguments);
 				break;
@@ -450,6 +459,21 @@ class functionsCapacitor
 		$recent_posts = wp_get_recent_posts($arguments);
 		foreach($recent_posts as $recent)
 			{
+			if ($recent["post_status"] == 'private')
+				{
+				if ($arguments['fct:perm'] == 'readable')
+					{
+					if (current_user_can('read_private_posts') == FALSE)
+						{
+						continue;
+						}
+					}
+				else
+					{
+					continue;
+					}
+				}
+			
 			$result_content .= '<li>';
 			
 			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
