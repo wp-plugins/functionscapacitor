@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.9.2
+Version:		0.9.3
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -22,6 +22,25 @@ class functionsCapacitor
 									'wp_nav_menu',
 									'wp_tag_cloud'
 									);
+	var $supported_conditions = array(
+									'is_front_page',
+									'is_home'
+									);
+	/* TODO:
+									'current_user_can',
+									'is_404',
+									'is_attachment',
+									'is_author',
+									'is_category',
+									'is_page',
+									'is_paged',
+									'is_post_type_archive',
+									'is_search',
+									'is_single',
+									'is_tag',
+									'is_tax',
+									'is_user_logged_in'
+	*/
 									
 	var $current_post;		 // To save/restore it
 	var $current_context;	 // To save/restore it
@@ -140,6 +159,40 @@ class functionsCapacitor
 		return $shortcode_content;
 		}
 		
+	function widget_condition($args,$instance)
+		{
+		$this->save_current_context();
+		
+		$condition_result = FALSE;
+		$condition_name = $instance['condition_name'];
+		
+		if (in_array($condition_name,$this->supported_conditions) AND function_exists($condition_name))
+			{
+			$condition_args = $this->decode_condition_arguments_string($instance['condition_args']);
+			$condition_result = $this->is_condition($condition_name,$condition_args,'widget');
+			
+			if ($instance['condition_not'] == TRUE)
+				{
+				if ($condition_result == TRUE)
+					{
+					$condition_result = FALSE;
+					}
+				else
+					{
+					$condition_result = TRUE;
+					}
+				}
+			}
+		else
+			{
+			$condition_result = TRUE;
+			}
+		
+		$this->restore_current_context();
+		
+		return $condition_result;
+		}
+		
 	function widget_content($args,$instance)
 		{
 		$this->save_current_context();
@@ -172,6 +225,9 @@ class functionsCapacitor
 		{
 		GLOBAL $post;
 		$post = $this->current_post;
+		// reset cached values
+		$this->current_post = NULL;
+		$this->current_context = array();
 		}
 		
 	// Magic keywords replacement
@@ -231,6 +287,16 @@ class functionsCapacitor
 		{
 		$arguments_string = html_entity_decode($arguments_string);
 		$arguments_string = trim(str_replace('&#038;','&',$arguments_string)); // fix HTML entities
+		return $arguments_string;
+		}
+		
+	function decode_condition_arguments_string($arguments_string)
+		{
+		$arguments_string = $this->decode_function_arguments_string($arguments_string);
+		if (is_numeric($arguments_string))
+			{
+			$arguments_string = intval($arguments_string);
+			}
 		return $arguments_string;
 		}
 		
@@ -450,6 +516,24 @@ class functionsCapacitor
 		return $function_content;
 		}
 		
+	function is_condition($condition_name,$condition_args,$target='widget')
+		{
+		$condition_result = FALSE;
+		
+		switch($condition_name)
+			{
+			case 'is_front_page':
+				$condition_result = is_front_page();
+				break;
+				
+			case 'is_home':
+				$condition_result = is_home();
+				break;
+			}
+		
+		return $condition_result;
+		}
+		
 	/* methods to render API result as HTML ouput */
 
 	function wp_get_recent_posts_content($arguments)
@@ -583,21 +667,29 @@ class functionsCapacitor_widget extends WP_Widget
 	function widget($args,$instance)
 		{
 		if (!isset($instance['title']))			 $instance['title']			 = '';
+		if (!isset($instance['condition_name'])) $instance['condition_name'] = '';
+		if (!isset($instance['condition_args'])) $instance['condition_args'] = '';
 		
-		$widget_content = $this->functionsCapacitor_class->widget_content($args,$instance);
+		$widget_content = '';
+		$condition_result = $this->functionsCapacitor_class->widget_condition($args,$instance);
 		
-		if (($instance['hide_if_empty'] == TRUE) AND ($widget_content == ''))
+		if ($condition_result == TRUE)
 			{
+			$widget_content = $this->functionsCapacitor_class->widget_content($args,$instance);
 			
-			}
-		else
-			{
-			extract($args);
-			if ($instance["title"] != '')
+			if (($instance['hide_if_empty'] == TRUE) AND ($widget_content == ''))
 				{
-				$widget_content = $before_title.$instance["title"].$after_title.$widget_content;
+				// display nothing
 				}
-			echo($before_widget.$widget_content.$after_widget);
+			else
+				{
+				extract($args);
+				if ($instance["title"] != '')
+					{
+					$widget_content = $before_title.$instance["title"].$after_title.$widget_content;
+					}
+				echo($before_widget.$widget_content.$after_widget);
+				}
 			}
 		}
 	
@@ -607,6 +699,8 @@ class functionsCapacitor_widget extends WP_Widget
 		if (!isset($instance['title']))			 $instance['title']			 = '';
 		if (!isset($instance['function_name']))	 $instance['function_name']	 = 'wp_get_recent_posts';
 		if (!isset($instance['function_args']))	 $instance['function_args']	 = '';
+		if (!isset($instance['condition_name'])) $instance['condition_name'] = '';
+		if (!isset($instance['condition_args'])) $instance['condition_args'] = '';
 		?>
 		<p>
 			<label for="<?php echo $this->get_field_id("title"); ?>">
@@ -635,9 +729,29 @@ class functionsCapacitor_widget extends WP_Widget
 			<textarea class="widefat" rows="6" cols="20" id="<?php echo $this->get_field_id('function_args'); ?>" name="<?php echo $this->get_field_name('function_args'); ?>"><?php echo esc_textarea($instance['function_args']); ?></textarea>
 		</p>
 		<p>
+			<label for="<?php echo $this->get_field_id('condition_name'); ?>">
+				<?php _e('Condition'); ?>:
+			</label>
+			<input id="<?php echo $this->get_field_id('condition_not'); ?>" name="<?php echo $this->get_field_name('condition_not'); ?>" type="checkbox" <?php checked(isset($instance['condition_not']) ? $instance['condition_not'] : 0); ?> />
+			<label for="<?php echo $this->get_field_id('condition_not'); ?>">
+				<?php _e('not'); ?>
+			</label>
+			<select id="<?php echo $this->get_field_id('condition_name'); ?>" name="<?php echo $this->get_field_name('condition_name'); ?>">
+			<option value=""></option>
+			<?php
+			foreach($this->functionsCapacitor_class->supported_conditions as $supported_condition)
+				{
+				$selected = $instance['condition_name'] == $supported_condition ? ' selected="selected"' : '';
+				echo('<option'.$selected.' value="'.$supported_condition.'">'.$supported_condition.'</option>');
+				}
+			?>
+			</select>
+			(<input size="4" id="<?php echo $this->get_field_id("condition_args"); ?>" name="<?php echo $this->get_field_name("condition_args"); ?>" type="text" value="<?php echo esc_attr($instance["condition_args"]); ?>" />)
+		</p>
+		<p>
 			<input id="<?php echo $this->get_field_id('hide_if_empty'); ?>" name="<?php echo $this->get_field_name('hide_if_empty'); ?>" type="checkbox" <?php checked(isset($instance['hide_if_empty']) ? $instance['hide_if_empty'] : 0); ?> />
 			<label for="<?php echo $this->get_field_id('hide_if_empty'); ?>">
-				<?php _e('Hide if empty'); ?>
+				<?php _e('Hide this widget if selected function return empty result'); ?>
 			</label>
 		</p>
 		<?php
@@ -647,6 +761,7 @@ class functionsCapacitor_widget extends WP_Widget
 	function update($new_instance,$old_instance)
 		{
 		$instance = $new_instance;
+		$instance['condition_not'] = isset($new_instance['condition_not']);
 		$instance['hide_if_empty'] = isset($new_instance['hide_if_empty']);
 		return $instance;
 		}

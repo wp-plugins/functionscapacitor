@@ -11,7 +11,7 @@ This plugin allow to apply some WordPress API's functions into your post/page co
 
 > Back WordPress API to the content.
 
-You can request some* functions of WordPress API with same syntax for arguments into your post or page content.
+You can request some* functions of WordPress API with same syntax for arguments into your posts, pages, or widgets content.
  functionsCapacitor will insert function result into your content as HTML output.
 
 (*) see [Supported functions](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-functions).
@@ -20,10 +20,11 @@ You can request some* functions of WordPress API with same syntax for arguments 
 
 * Safe process to use this plugin on WordPress MU or WP MultiSite.
 * Allow to personalize [Embedded output](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Embedded-output)
- for each functions
+ for each functions.
 * Easy and powerfull [Functions arguments syntax](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Functions-arguments-syntax)
  to apply any WordPress API options.
-* Generic functions arguments with [Magic keywords](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords)
+* Generic functions arguments with [Magic keywords](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords).
+* NEW: use [WordPress conditional tags](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-conditional-functions) as option to display a widget.
 * Structured source-code to prevent any conflict.
 
 Three methods to use WordPress API functions :
@@ -38,13 +39,15 @@ One shortcode tag can request several functions, input [fct function_name1="argu
 
 Add a functionsCapacitor widget, select a function, input function parameters like "parameter1=value&parameter2=value" (without quotes).
 
+Optional: choose a [supported conditional function](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-conditional-functions) to decide where to display your widget.
+
 = Method by custom fields =
 
 Set a custom field name with function name and put function arguments into custom field value like "parameter1=value&parameter2=value" (without quotes).
 
 Result is always inserted at end. Plugin has priority 5.
 Most plugins use priority 10.
-This method is applied if post/page were displayed.
+This method is applied if post/page is displayed.
 	
 = Examples =
 
@@ -99,13 +102,13 @@ Follow these examples to setup your requests :
 
 Not supported issues :
 
-* parameter's value can't contain a & character.
+* parameter's value can't contain "&" or "=" characters.
 * parameter's value can't contain an associative array like array('name'=>value,'name'=>value).
 * parameter's value can't contain an array of arrays.
 * parameter's value can't contain a PHP variable like $post->ID,
  see [Magic keywords](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords).
 * parameter's value can't request a PHP or WordPress function.
-* parameter's value can't contain PHP code.
+* parameter's value can't contain PHP source-code.
 
 == Magic keywords ==
 
@@ -185,6 +188,13 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 * fct:show_thumbnail=true if fct:thumbnail_size is defined
 * display excerpt and thumbnail for draft, future, pending, private, and protected posts
  but not create an excerpt from content.
+ 
+== Supported conditional functions ==
+
+* is_home()
+* is_front_page()
+ 
+See [WordPress Conditional Tags](http://codex.wordpress.org/Conditional_Tags "Wordpress documentation") about these functions and their arguments syntax.
 
 == Frequently Asked Questions ==
 
@@ -215,6 +225,12 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.9.3 =
+
+* add conditional options to choose when to display or not a widget,
+* support is_home() conditional function,
+* support is_front_page() conditional function.
 
 = 0.9.2 =
 
