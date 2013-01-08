@@ -137,6 +137,7 @@ You can use magic keywords into an array.
 * fct:container to set HTML tag of function container.
  Set "fct:container=''" to remove this container.
  Each functions have a default container related to its output.
+* fct:container_id to set container "id" attribute.
 * fct:container_class to set container "class" attribute.
  Function name as default.
  Example with shortcode: [fct function_name="fct:container_class=name&param1=value&param2=value"].
@@ -182,6 +183,7 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
  but display private posts if user is allowed.
 * if fct:perm='' not output permalink of draft, future, pending, private posts.
 * set fct:show_excerpt=1|true to display posts excerpts.
+* set fct:show_date=1|true to display posts dates.
 * set fct:show_thumbnail=1|true to display post thumbnail,
  with fct:thumbnail_size=thumbnail|medium|large|post-thumbnail
  or size name defined with add_image_size() into theme's file functions.php.
@@ -215,7 +217,7 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > and when I saw the result on screen I had a revelation ! A vision !
 > The functions capacitor !
 
-= D'où vient l'idée du convecteur de functions ? =
+= D'où vient l'idée du convecteur de fonctions ? =
 
 > J'étais assis devant mon ordinateur,
 > j'allais copier-coller un hack dans un template,
@@ -225,6 +227,11 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.9.4 =
+
+* add fct:show_date for wp_get_recent_posts().
+* add fct:container_id special parameter.
 
 = 0.9.3 =
 

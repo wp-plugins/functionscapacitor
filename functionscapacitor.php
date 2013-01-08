@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.9.3
+Version:		0.9.4
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -493,6 +493,11 @@ class functionsCapacitor
 			}
 		if (($function_content != '') AND ($function_container != ''))
 			{
+			$function_id = '';
+			if ($arguments['fct:container_id'] != '')
+				{
+				$function_id = ' id="'.$arguments['fct:container_id'].'"';
+				}
 			$function_style = '';
 			if ($arguments['fct:container_style'] != '')
 				{
@@ -510,7 +515,7 @@ class functionsCapacitor
 				{
 				$function_class = ' class="'.$fct_name.'"';
 				}
-			$function_content = '<'.$function_container.''.$function_class.''.$function_style.'>'.$function_content.'</'.$function_container.'>';
+			$function_content = '<'.$function_container.''.$function_id.''.$function_class.''.$function_style.'>'.$function_content.'</'.$function_container.'>';
 			}
 			
 		return $function_content;
@@ -582,7 +587,7 @@ class functionsCapacitor
 					}
 				}
 			
-			$result_content .= '<li>';
+			$result_content .= '<li class="post">';
 			
 			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
 				{
@@ -608,6 +613,11 @@ class functionsCapacitor
 				}
 			$result_content .= ''.$recent['post_title'].'';
 			$result_content .= '</a>';
+			
+			if ($arguments['fct:show_date'])
+				{
+				$result_content .= "\r\n".'<p class="date">'.mysql2date(get_option('date_format'), $recent['post_date']).'</p>';
+				}
 			
 			if ($arguments['fct:show_excerpt'])
 				{
