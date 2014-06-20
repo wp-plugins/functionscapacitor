@@ -1,8 +1,8 @@
 === functionsCapacitor ===
 Contributors: oliezekat
 Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories, widget, wordpressmu, wpmu, wpms, multi-site, multisite
-Requires at least: 2.5.0
-Tested up to: 3.3.1
+Requires at least: 3.0.1
+Tested up to: 3.7.1
 Stable tag: trunk
 
 This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
@@ -148,6 +148,9 @@ functionsCapacitor not create a container if the API function still return a con
 
 == Supported functions ==
 
+* get_the_post_thumbnail()
+ with size=thumbnail|medium|large|post-thumbnail
+ or size name defined with add_image_size() into theme's file functions.php.
 * get_the_tag_list()
  with before=''&sep=' '&after='' as default,
  apply only on page or post,
@@ -193,10 +196,34 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
  
 == Supported conditional functions ==
 
-* is_home()
+* cat_is_ancestor_of()
+ check if current category is child of conditional argument.
+* in_category()
+* is_category()
 * is_front_page()
- 
+* is_home()
+* is_single()
+
 See [WordPress Conditional Tags](http://codex.wordpress.org/Conditional_Tags "Wordpress documentation") about these functions and their arguments syntax.
+
+= Not canonical conditional functions =
+
+These functions are designed for this plugin only, not available elsewhere, and not documented into the WordPress Codex.
+
+* in_tree_of()
+ for both posts and categories,
+ like is_category_in_tree_of() and is_single_in_tree_of(),
+ require argument as numeric category ID.
+* is_category_in_tree_of()
+ like cat_is_ancestor_of(),
+ return true if display parent category.
+* is_single_in_tree_of()
+ like is_category_in_tree_of() for posts only,
+ require argument as numeric category ID.
+
+= Conditional functions arguments syntax =
+
+Support only arguments as single value ; string, numeric, or [magic keyword](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Magic-keywords).
 
 == Frequently Asked Questions ==
 
@@ -228,6 +255,18 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 
 == Changelog ==
 
+= 0.9.5 =
+
+* fix issue while esc_textarea() API is missing.
+* support is_category() conditional function.
+* support cat_is_ancestor_of() conditional function.
+* support is_single() conditional function.
+* support in_category() conditional function.
+* add is_category_in_tree_of() conditional function (not canonical).
+* add is_single_in_tree_of() conditional function (not canonical).
+* add in_tree_of() conditional function (not canonical).
+* support get_the_post_thumbnail() function.
+
 = 0.9.4 =
 
 * add fct:show_date for wp_get_recent_posts().
@@ -236,7 +275,7 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 = 0.9.3 =
 
 * add conditional options to choose when to display or not a widget,
-* support is_home() conditional function,
+* support is_home() conditional function.
 * support is_front_page() conditional function.
 
 = 0.9.2 =

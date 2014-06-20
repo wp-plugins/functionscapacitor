@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.9.4
+Version:		0.9.5
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -12,6 +12,7 @@ Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 class functionsCapacitor
 	{
 	var $supported_functions = array(
+									'get_the_post_thumbnail',
 									'get_the_tag_list',
 									'wp_get_archives',
 									'wp_get_recent_posts',
@@ -23,24 +24,21 @@ class functionsCapacitor
 									'wp_tag_cloud'
 									);
 	var $supported_conditions = array(
-									'is_front_page',
-									'is_home'
-									);
-	/* TODO:
-									'current_user_can',
-									'is_404',
-									'is_attachment',
-									'is_author',
+									'cat_is_ancestor_of',
+									'in_category',
+									'in_tree_of',
 									'is_category',
-									'is_page',
-									'is_paged',
-									'is_post_type_archive',
-									'is_search',
+									'is_category_in_tree_of',
+									'is_front_page',
+									'is_home',
 									'is_single',
-									'is_tag',
-									'is_tax',
-									'is_user_logged_in'
-	*/
+									'is_single_in_tree_of'
+									);
+	var $not_canonical_conditions = array(
+									'in_tree_of',
+									'is_category_in_tree_of',
+									'is_single_in_tree_of'
+									);
 									
 	var $current_post;		 // To save/restore it
 	var $current_context;	 // To save/restore it
@@ -166,7 +164,15 @@ class functionsCapacitor
 		$condition_result = FALSE;
 		$condition_name = $instance['condition_name'];
 		
-		if (in_array($condition_name,$this->supported_conditions) AND function_exists($condition_name))
+		if ($condition_name == '')
+			{
+			$condition_result = TRUE;
+			}
+		else if (in_array($condition_name,$this->supported_conditions) == FALSE)
+			{
+			$condition_result = FALSE;
+			}
+		else if (function_exists($condition_name) OR in_array($condition_name,$this->not_canonical_conditions))
 			{
 			$condition_args = $this->decode_condition_arguments_string($instance['condition_args']);
 			$condition_result = $this->is_condition($condition_name,$condition_args,'widget');
@@ -185,7 +191,7 @@ class functionsCapacitor
 			}
 		else
 			{
-			$condition_result = TRUE;
+			$condition_result = FALSE;
 			}
 		
 		$this->restore_current_context();
@@ -292,7 +298,11 @@ class functionsCapacitor
 		
 	function decode_condition_arguments_string($arguments_string)
 		{
-		$arguments_string = $this->decode_function_arguments_string($arguments_string);
+		return $this->decode_function_arguments_string($arguments_string);
+		}
+		
+	function explode_condition_arguments_string($arguments_string)
+		{
 		if (is_numeric($arguments_string))
 			{
 			$arguments_string = intval($arguments_string);
@@ -383,6 +393,18 @@ class functionsCapacitor
 		$function_content = '';
 		switch($fct_name)
 			{
+			case 'get_the_post_thumbnail':
+				if (has_post_thumbnail($this->current_post->ID))
+					{
+					$function_container = 'div';
+					if (!isset($arguments['size']))
+						{
+						$arguments['size'] = 'thumbnail';
+						}
+					$function_content = get_the_post_thumbnail($this->current_post->ID,$arguments['size'],$arguments);
+					}
+				break;
+				
 			case 'get_the_tag_list':
 				if (is_single($this->current_post->ID) OR is_page($this->current_post->ID))
 					{
@@ -523,10 +545,116 @@ class functionsCapacitor
 		
 	function is_condition($condition_name,$condition_args,$target='widget')
 		{
+		// Magic keywords replacement
+		$condition_args = $this->magic_keywords_replace($condition_args);
+		
+		$arguments = $this->explode_condition_arguments_string($condition_args);
+
 		$condition_result = FALSE;
 		
 		switch($condition_name)
 			{
+			case 'cat_is_ancestor_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_category() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else
+					{
+					$current_cat_ID = intval(get_query_var('cat'));
+					$condition_result = cat_is_ancestor_of($arguments,$current_cat_ID);
+					}
+				break;
+			
+			case 'in_category':
+				if (is_single() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if ($condition_args != '')
+					{
+					$condition_result = in_category($arguments,$this->current_post->ID);
+					}
+				else
+					{
+					$condition_result = FALSE;
+					}
+				break;
+		
+			case 'in_tree_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_single())
+					{
+					if (in_category($arguments,$this->current_post->ID))
+						{
+						$condition_result = TRUE;
+						}
+					else
+						{
+						$condition_result = $this->post_is_in_descendant_category($arguments,$this->current_post->ID);
+						}
+					}
+				else if (is_category())
+					{
+					if (is_category($arguments))
+						{
+						$condition_result = TRUE;
+						}
+					else
+						{
+						$current_cat_ID = intval(get_query_var('cat'));
+						$condition_result = cat_is_ancestor_of($arguments,$current_cat_ID);
+						}
+					}
+				else
+					{
+					$condition_result = FALSE;
+					}
+				
+				break;
+			
+			case 'is_category':
+				if (is_category() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if ($condition_args != '')
+					{
+					$condition_result = is_category($arguments);
+					}
+				else
+					{
+					$condition_result = TRUE;
+					}
+				break;
+				
+			case 'is_category_in_tree_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_category() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_category($arguments))
+					{
+					$condition_result = TRUE;
+					}
+				else
+					{
+					$current_cat_ID = intval(get_query_var('cat'));
+					$condition_result = cat_is_ancestor_of($arguments,$current_cat_ID);
+					}
+				break;
+			
 			case 'is_front_page':
 				$condition_result = is_front_page();
 				break;
@@ -534,11 +662,72 @@ class functionsCapacitor
 			case 'is_home':
 				$condition_result = is_home();
 				break;
-			}
+			
+			case 'is_single':
+				if (is_single() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if ($condition_args != '')
+					{
+					$condition_result = is_single($arguments);
+					}
+				else
+					{
+					$condition_result = TRUE;
+					}
+				break;
 		
+			case 'is_single_in_tree_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_single() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if (in_category($arguments,$this->current_post->ID))
+					{
+					$condition_result = TRUE;
+					}
+				else
+					{
+					$condition_result = $this->post_is_in_descendant_category($arguments,$this->current_post->ID);
+					}
+				break;
+			}
+				
 		return $condition_result;
 		}
 		
+	function esc_textarea($text)
+		{
+		if (function_exists('esc_textarea'))
+			{
+			return esc_textarea($text);
+			}
+		else
+			{
+			$safe_text = htmlspecialchars( $text, ENT_QUOTES, get_option( 'blog_charset' ) );
+			return apply_filters( 'esc_textarea', $safe_text, $text );
+			}
+		}
+		
+	function post_is_in_descendant_category($cats, $_post = null)
+		{
+		foreach((array) $cats as $cat)
+			{
+			// get_term_children() accepts integer ID only
+			$descendants = get_term_children((int) $cat, 'category');
+			if ($descendants && in_category($descendants, $_post))
+				{
+				return true;
+				}
+			}
+		return false;
+		}
+
 	/* methods to render API result as HTML ouput */
 
 	function wp_get_recent_posts_content($arguments)
@@ -589,7 +778,7 @@ class functionsCapacitor
 			
 			$result_content .= '<li class="post">';
 			
-			if ($get_the_post_thumbnail_exists AND $arguments['fct:show_thumbnail'])
+			if ($get_the_post_thumbnail_exists AND ($arguments['fct:show_thumbnail'] == TRUE) AND has_post_thumbnail($recent['ID']))
 				{
 				if ($recent_permalink != '')
 					{
@@ -702,7 +891,7 @@ class functionsCapacitor_widget extends WP_Widget
 				}
 			}
 		}
-	
+
 	// widget setup form
 	function form($instance)
 		{
@@ -736,7 +925,7 @@ class functionsCapacitor_widget extends WP_Widget
 			<label for="<?php echo $this->get_field_id('function_args'); ?>">
 				<?php _e('Parameters'); ?>:
 			</label>
-			<textarea class="widefat" rows="6" cols="20" id="<?php echo $this->get_field_id('function_args'); ?>" name="<?php echo $this->get_field_name('function_args'); ?>"><?php echo esc_textarea($instance['function_args']); ?></textarea>
+			<textarea class="widefat" rows="6" cols="20" id="<?php echo $this->get_field_id('function_args'); ?>" name="<?php echo $this->get_field_name('function_args'); ?>"><?php echo $this->functionsCapacitor_class->esc_textarea($instance['function_args']); ?></textarea>
 		</p>
 		<p>
 			<label for="<?php echo $this->get_field_id('condition_name'); ?>">
