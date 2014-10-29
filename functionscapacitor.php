@@ -4,7 +4,7 @@ Plugin Name:	functionsCapacitor
 Plugin URI:		http://wordpress.org/extend/plugins/functionscapacitor/
 Description:	Back WordPress API to the content. This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
 Author:			oliezekat
-Version:		0.9.5
+Version:		0.9.6
 Author URI:		http://life2front.com/oliezekat
 Licence:		GNU-GPL version 3 http://www.gnu.org/licenses/gpl.html
 */
@@ -31,12 +31,17 @@ class functionsCapacitor
 									'is_category_in_tree_of',
 									'is_front_page',
 									'is_home',
+									'is_page',
+									'is_page_descendant_of',
+									'is_page_in_tree_of',
 									'is_single',
 									'is_single_in_tree_of'
 									);
 	var $not_canonical_conditions = array(
 									'in_tree_of',
 									'is_category_in_tree_of',
+									'is_page_descendant_of',
+									'is_page_in_tree_of',
 									'is_single_in_tree_of'
 									);
 									
@@ -590,6 +595,10 @@ class functionsCapacitor
 					{
 					$condition_result = FALSE;
 					}
+				else if (is_page())
+					{
+					$condition_result = $this->page_has_ascendant($arguments);
+					}
 				else if (is_single())
 					{
 					if (in_category($arguments,$this->current_post->ID))
@@ -662,6 +671,51 @@ class functionsCapacitor
 			case 'is_home':
 				$condition_result = is_home();
 				break;
+				
+			case 'is_page':
+				if (is_page() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if ($condition_args != '')
+					{
+					$condition_result = is_page($arguments);
+					}
+				else
+					{
+					$condition_result = TRUE;
+					}
+				break;
+		
+			case 'is_page_descendant_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_page() == FALSE)
+					{
+					$condition_result = FALSE;
+					}
+				else if (is_page($arguments))
+					{
+					$condition_result = FALSE;
+					}
+				else
+					{
+					$condition_result = $this->page_has_ascendant($arguments);
+					}
+				break;
+		
+			case 'is_page_in_tree_of':
+				if ($condition_args == '')
+					{
+					$condition_result = FALSE;
+					}
+				else
+					{
+					$condition_result = $this->page_has_ascendant($arguments);
+					}
+				break;
 			
 			case 'is_single':
 				if (is_single() == FALSE)
@@ -712,6 +766,27 @@ class functionsCapacitor
 			$safe_text = htmlspecialchars( $text, ENT_QUOTES, get_option( 'blog_charset' ) );
 			return apply_filters( 'esc_textarea', $safe_text, $text );
 			}
+		}
+		
+	function page_has_ascendant($root_post)
+		{
+		global $post;
+		if (is_page())
+			{
+			if (is_page($root_post))
+				{
+				return true;
+				}
+			$ancestors = get_post_ancestors($post->ID);
+			foreach ($ancestors as $ancestor)
+				{
+				if($ancestor == $root_post)
+					{
+					return true;
+					}
+				}
+			}
+		return false;
 		}
 		
 	function post_is_in_descendant_category($cats, $_post = null)

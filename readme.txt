@@ -2,7 +2,7 @@
 Contributors: oliezekat
 Tags: api, codex, shortcode, content, post, page, pages, posts, links, archives, categories, widget, wordpressmu, wpmu, wpms, multi-site, multisite
 Requires at least: 3.0.1
-Tested up to: 3.9.1
+Tested up to: 4.0.0
 Stable tag: trunk
 
 This plugin allow to apply some WordPress API's functions into your post/page content or as a widget.
@@ -14,7 +14,8 @@ This plugin allow to apply some WordPress API's functions into your post/page co
 You can request some* functions of WordPress API with same syntax for arguments into your posts, pages, or widgets content.
  functionsCapacitor will insert function result into your content as HTML output.
 
-(*) see [Supported functions](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-functions).
+(*) see [Supported functions](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-functions)
+or [conditional tags](http://wordpress.org/extend/plugins/functionscapacitor/other_notes/#Supported-conditional-functions).
 
 = Features =
 
@@ -45,9 +46,9 @@ Optional: choose a [supported conditional function](http://wordpress.org/extend/
 
 Set a custom field name with function name and put function arguments into custom field value like "parameter1=value&parameter2=value" (without quotes).
 
-Result is always inserted at end. Plugin has priority 5.
-Most plugins use priority 10.
-This method is applied if post/page is displayed.
+* Result is always inserted at end.
+* Plugin has priority 5. Most plugins use priority 10.
+* This method is applied if post/page is displayed.
 	
 = Examples =
 
@@ -202,6 +203,7 @@ Need you to support more functions, mail to oliezekat@yahoo.fr
 * is_category()
 * is_front_page()
 * is_home()
+* is_page()
 * is_single()
 
 See [WordPress Conditional Tags](http://codex.wordpress.org/Conditional_Tags "Wordpress documentation") about these functions and their arguments syntax.
@@ -211,15 +213,20 @@ See [WordPress Conditional Tags](http://codex.wordpress.org/Conditional_Tags "Wo
 These functions are designed for this plugin only, not available elsewhere, and not documented into the WordPress Codex.
 
 * in_tree_of()
- for both posts and categories,
- like is_category_in_tree_of() and is_single_in_tree_of(),
- require argument as numeric category ID.
+ check if page, post, or category is descendant of conditional argument (or itself),
+ require argument as page or category numeric ID.
 * is_category_in_tree_of()
- like cat_is_ancestor_of(),
- return true if display parent category.
+ check if category is descendant of conditional argument (or itself),
+ require argument as category numeric ID.
+* is_page_descendant_of()
+ check if page is descendant of conditional argument,
+ require argument as page numeric ID.
+* is_page_in_tree_of()
+ check if page is descendant of conditional argument (or itself),
+ require argument as page numeric ID.
 * is_single_in_tree_of()
- like is_category_in_tree_of() for posts only,
- require argument as numeric category ID.
+ check if post is in descendant of conditional argument,
+ require argument as category numeric ID.
 
 = Conditional functions arguments syntax =
 
@@ -254,6 +261,14 @@ Yes ! And you can install functionsCapacitor on WPMU or WPMS.
 > Le convecteur de fonctions !
 
 == Changelog ==
+
+= 0.9.6 =
+
+* support is_page() conditional function.
+* add is_page_in_tree_of() conditional function (not canonical).
+* in_tree_of() support page ID as argument.
+* add is_page_descendant_of() conditional function (not canonical).
+* Tested with WordPress 4.0 (and 3.5.1).
 
 = 0.9.5 =
 
